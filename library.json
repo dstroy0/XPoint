@@ -1,0 +1,25 @@
+{
+  "name": "XPoint",
+  "version": "0.1.0",
+  "description": "Hardware-agnostic crosspoint matrix routing library for Arduino and PlatformIO. Supports GPIO, shift-register, I2C expander, and PWM drivers with interlock and exclusive-input protections.",
+  "keywords": [
+    "crosspoint",
+    "matrix",
+    "relay",
+    "shift-register",
+    "mcp23017",
+    "tlc59711",
+    "routing"
+  ],
+  "authors": [
+    {
+      "name": "Douglas Quigg (dstroy0)",
+      "email": "dquigg123@gmail.com",
+      "url": "https://github.com/dstroy0"
+    }
+  ],
+  "repository": { "type": "git", "url": "https://github.com/dstroy0/XPoint" },
+  "license": "AGPL-3.0-only",
+  "frameworks": "arduino",
+  "platforms": "*"
+}

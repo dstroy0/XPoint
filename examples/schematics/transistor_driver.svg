@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" viewBox="0 0 600 300">
+  <rect width="100%" height="100%" fill="#fff"/>
+  <text x="20" y="24" font-family="Arial" font-size="16">NPN Relay Driver (example)</text>
+  <!-- MCU pin -->
+  <circle cx="80" cy="80" r="10" fill="#66c"/>
+  <text x="100" y="86" font-family="Arial" font-size="12">MCU Pin</text>
+  <!-- resistor -->
+  <rect x="150" y="65" width="40" height="30" fill="#ccc"/>
+  <text x="155" y="86" font-family="Arial" font-size="12">4.7k</text>
+  <!-- NPN -->
+  <rect x="230" y="50" width="40" height="80" fill="#f5f5f5" stroke="#000"/>
+  <text x="235" y="86" font-family="Arial" font-size="12">NPN</text>
+  <!-- connections -->
+  <line x1="90" y1="80" x2="150" y2="80" stroke="#000" stroke-width="2"/>
+  <line x1="190" y1="80" x2="230" y2="80" stroke="#000" stroke-width="2"/>
+  <!-- coil -->
+  <rect x="300" y="40" width="120" height="60" fill="#ffdddd" stroke="#000"/>
+  <text x="340" y="74" font-family="Arial" font-size="12">Relay Coil</text>
+  <line x1="270" y1="80" x2="300" y2="80" stroke="#000" stroke-width="2"/>
+  <line x1="350" y1="40" x2="350" y2="20" stroke="#000" stroke-width="2"/>
+  <text x="300" y="18" font-family="Arial" font-size="12">Vcc</text>
+  <!-- flyback diode -->
+  <line x1="300" y1="100" x2="350" y2="100" stroke="#000" stroke-width="2"/>
+  <polygon points="350,96 360,100 350,104" fill="#000"/>
+  <text x="360" y="104" font-family="Arial" font-size="12">Diode</text>
+  <!-- labels -->
+  <text x="20" y="140" font-family="Arial" font-size="12">Notes: MCU drives base via resistor; collector to coil; emitter to GND; diode across coil.</text>
+</svg>
