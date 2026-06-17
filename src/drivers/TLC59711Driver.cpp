@@ -7,6 +7,10 @@
 
 #if defined(ARDUINO)
 #include <SPI.h>
+/* ESP32 Arduino core omits MSBFIRST; all cores define SPI_MSBFIRST. */
+#ifndef MSBFIRST
+#define MSBFIRST SPI_MSBFIRST
+#endif
 #endif
 
 /*

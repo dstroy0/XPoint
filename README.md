@@ -180,7 +180,7 @@ All drivers are in `src/drivers/`. Arduino-specific drivers compile only when `A
 
 ```cpp
 // mapper returns the Arduino pin number for each (row, col) node
-static uint16_t mapper(uint8_t r, uint8_t c) { return (uint16_t)(2 + r * 4 + c); }
+static uint8_t mapper(uint8_t r, uint8_t c) { return (uint8_t)(2 + r * 4 + c); }
 
 // rows, cols, mapper, maxPinIndex
 ArduinoDirectGPIODriver driver(4, 4, mapper, 17);
@@ -271,14 +271,26 @@ public:
 
 ### Mapper functions
 
-All drivers take a plain C function pointer `uint16_t (*MapFn)(uint8_t row, uint8_t col)` (or `uint8_t (*)` for MCP23017). Non-capturing lambdas convert to function pointers automatically in C++11:
+Drivers take a plain C function pointer whose return type matches the driver:
+
+| Driver                       | MapFn return type | Range                  |
+| ---------------------------- | ----------------- | ---------------------- |
+| `ArduinoDirectGPIODriver`    | `uint8_t`         | Arduino pin number     |
+| `ArduinoShiftRegisterDriver` | `uint16_t`        | bit index in SR chain  |
+| `MCP23017Driver`             | `uint8_t`         | pin index 0–15         |
+| `TLC59711Driver`             | `uint16_t`        | channel index 0–(N×12) |
+
+Non-capturing lambdas convert to function pointers automatically in C++11:
 
 ```cpp
-// Named function (always works):
-static uint16_t myMapper(uint8_t r, uint8_t c) { return r * COLS + c; }
+// Named function (ArduinoDirectGPIODriver — uint8_t):
+static uint8_t gpioMap(uint8_t r, uint8_t c) { return (uint8_t)(2 + r * 4 + c); }
+
+// Named function (TLC59711 / shift-register — uint16_t):
+static uint16_t srMap(uint8_t r, uint8_t c) { return (uint16_t)(r * COLS + c); }
 
 // Non-capturing lambda (C++11 implicit conversion):
-auto myMapper = [](uint8_t r, uint8_t c) -> uint16_t { return r * 4 + c; };
+auto myMapper = [](uint8_t r, uint8_t c) -> uint8_t { return (uint8_t)(r * 4 + c); };
 ```
 
 `HC595Helper::rowMajorIndex(row, col, cols)` computes a row-major shift-register bit index inline.
@@ -315,16 +327,17 @@ examples/
     CustomDriver/       — implement XPointDriver from scratch (no hardware needed)
   WIRING.md             — wiring patterns, transistor driver circuit
   schematics/           — transistor driver reference schematic
-.github/workflows/ci.yml       — CI: host test build + PlatformIO Uno build
+.github/workflows/ci.yml       — CI: host tests + PlatformIO 8-board × 7-example matrix + Doxygen
 ```
 
 ## CI
 
 GitHub Actions runs on every push and PR to `main`/`master`:
 
-1. **Host tests** — `g++` compiles and runs `test/test_xpoint.cpp` against the library sources
-2. **Arduino Uno build** — `pio ci --lib="." --board=uno` compiles `examples/advanced/ShiftRegister` for ATmega328P
+1. **Host tests** — `g++` compiles and runs `test/test_xpoint.cpp` (17 tests, no Arduino headers)
+2. **PlatformIO** — 8 boards × 7 examples (56 parallel jobs): ATmega328P/2560/32U4, SAMD21, SAM3X8E, ESP8266, ESP32, iMXRT1062
+3. **Doxygen** — generates dark-themed HTML docs and uploads them as a build artifact
 
 ## License
 
-MIT
+AGPL-3.0-only — Copyright (c) 2026 Douglas Quigg (dstroy0) \<dquigg123@gmail.com\>
