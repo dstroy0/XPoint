@@ -9,12 +9,16 @@
 #include <SPI.h>
 /*
  * MSBFIRST portability:
- *   AVR / ESP8266 / Due  — MSBFIRST is a preprocessor macro (= 1).
- *   SAMD / RP2040 / Nano — MSBFIRST is a BitOrder enum value (ArduinoCore-API);
- *                          #ifndef won't see it, so guard on ARDUINO_API_VERSION.
- *   ESP32 (old core)     — neither macro nor ARDUINO_API_VERSION; define 1.
+ *   AVR / ESP8266      — MSBFIRST is a preprocessor macro (= 1).
+ *   SAMD / RP2040      — MSBFIRST is a BitOrder enum (ArduinoCore-API);
+ *                        detected via ARDUINO_API_VERSION.
+ *   Due (SAM)          — MSBFIRST is a BitOrder enum in framework-arduino-sam;
+ *                        no ARDUINO_API_VERSION — detected via ARDUINO_ARCH_SAM.
+ *   ESP32 (old core)   — neither macro nor BitOrder; define int 1.
+ * Only emit the fallback define when none of the enum-using architectures are
+ * active AND the macro is not already provided.
  */
-#if !defined(MSBFIRST) && !defined(ARDUINO_API_VERSION)
+#if !defined(MSBFIRST) && !defined(ARDUINO_API_VERSION) && !defined(ARDUINO_ARCH_SAM)
 #define MSBFIRST 1
 #endif
 #endif
