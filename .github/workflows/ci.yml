@@ -124,7 +124,7 @@ jobs:
       # Cache the PlatformIO package store (toolchains, frameworks, board defs)
       # keyed on platform + library.json so a dependency change busts the cache.
       # Boards sharing a platform (uno/mega/leonardo → atmelavr) share a key.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.platformio
           key: pio-${{ matrix.platform }}-${{ hashFiles('library.json') }}
@@ -142,9 +142,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # --------------------------------------------------------------------------
-  # Doxygen documentation build.
+  # Doxygen documentation build + GitHub Pages deployment.
   # Generates HTML into docs/html/ using doxygen-awesome-css dark theme.
-  # Output is uploaded as a build artifact (download from the Actions run page).
+  # Deploys to GitHub Pages via the Actions deployment API (no branch commit).
   # --------------------------------------------------------------------------
   docs:
     name: Doxygen
@@ -152,10 +152,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Install Doxygen
         run: sudo apt-get update -qq && sudo apt-get install -y doxygen
@@ -170,11 +178,15 @@ jobs:
             -O docs/doxygen-awesome.css
 
       - name: Generate docs
-        run: doxygen Doxyfile
+        run: |
+          doxygen Doxyfile
+          touch docs/html/.nojekyll
 
-      - name: Upload docs artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: xpoint-docs-html
           path: docs/html/
-          retention-days: 30
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v5
