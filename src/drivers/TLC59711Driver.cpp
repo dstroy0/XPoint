@@ -7,8 +7,14 @@
 
 #if defined(ARDUINO)
 #include <SPI.h>
-/* MSBFIRST = 1 universally; some cores (Due, ESP32) omit one or both names. */
-#ifndef MSBFIRST
+/*
+ * MSBFIRST portability:
+ *   AVR / ESP8266 / Due  — MSBFIRST is a preprocessor macro (= 1).
+ *   SAMD / RP2040 / Nano — MSBFIRST is a BitOrder enum value (ArduinoCore-API);
+ *                          #ifndef won't see it, so guard on ARDUINO_API_VERSION.
+ *   ESP32 (old core)     — neither macro nor ARDUINO_API_VERSION; define 1.
+ */
+#if !defined(MSBFIRST) && !defined(ARDUINO_API_VERSION)
 #define MSBFIRST 1
 #endif
 #endif
