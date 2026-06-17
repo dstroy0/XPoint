@@ -10,9 +10,9 @@
 #include <XPoint.h>
 #include <drivers/ArduinoDirectGPIODriver.h>
 
-static uint16_t mapper(uint8_t r, uint8_t c)
+static uint8_t mapper(uint8_t r, uint8_t c)
 {
-    return (uint16_t)(2 + r * 2 + c);
+    return (uint8_t)(2 + r * 2 + c);
 }
 
 ArduinoDirectGPIODriver driver(2, 2, mapper, 5);

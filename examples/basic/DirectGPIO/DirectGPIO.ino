@@ -4,9 +4,9 @@
 #include <XPoint.h>
 #include <drivers/ArduinoDirectGPIODriver.h>
 
-static uint16_t mapper(uint8_t r, uint8_t c)
+static uint8_t mapper(uint8_t r, uint8_t c)
 {
-    return (uint16_t)(2 + r * 4 + c);
+    return (uint8_t)(2 + r * 4 + c);
 }
 
 // rows=4, cols=4, mapper, maxPinIndex=17

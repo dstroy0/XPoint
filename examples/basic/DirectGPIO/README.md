@@ -10,7 +10,7 @@ Wiring
 Pin mapping example (4x4, pins 2..17):
 
 ```cpp
-static uint16_t mapper(uint8_t r, uint8_t c) { return (uint16_t)(2 + r * 4 + c); }
+static uint8_t mapper(uint8_t r, uint8_t c) { return (uint8_t)(2 + r * 4 + c); }
 ArduinoDirectGPIODriver driver(4, 4, mapper, 17);
 ```
 
