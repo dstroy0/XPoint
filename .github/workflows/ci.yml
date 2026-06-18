@@ -190,3 +190,35 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v5
+
+  # --------------------------------------------------------------------------
+  # Changelog — regenerate CHANGELOG.md from git history via git-cliff and
+  # commit it back to main.  Runs on push only (PRs lack write permission).
+  # The commit message contains [skip ci] to prevent a re-trigger loop.
+  # --------------------------------------------------------------------------
+  changelog:
+    name: Update changelog
+    needs: host-tests
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # git-cliff needs full history to build the log
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate CHANGELOG.md
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Commit changelog
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update CHANGELOG.md [skip ci]"
+          file_pattern: CHANGELOG.md
