@@ -75,12 +75,9 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install ${{ matrix.core }}
 
-      - name: Install library
-        run: arduino-cli lib install --zip-path . || true
-
       - name: Compile ${{ matrix.fqbn }} — ${{ matrix.sketch }}
         run: |
           arduino-cli compile \
             --fqbn ${{ matrix.fqbn }} \
-            --libraries . \
+            --library . \
             ${{ matrix.sketch }}
