@@ -4,6 +4,16 @@ All notable changes to XPoint are documented here.
 
 ## [Unreleased]
 
+### CI / Build
+- update CHANGELOG.md [skip ci] ([`f0d3519`](https://github.com/dstroy0/XPoint/commit/f0d3519dbd452740559714feed5a43318ea183f7))
+
+
+### Changes
+- add version tag to readme ([`6f9dc65`](https://github.com/dstroy0/XPoint/commit/6f9dc65d5f97cab973ee444b0023bdeba6c42ef3))
+
+
+## [0.1.0] - 2026-06-18
+
 ### Bug Fixes
 - fix arduino ci ([`6660d6e`](https://github.com/dstroy0/XPoint/commit/6660d6e9edbc04ca17d302bc3865aa1e24a311fc))
 - fix param typing ([`bcd3a33`](https://github.com/dstroy0/XPoint/commit/bcd3a3318fb3437a6e7159df33a26b244c87caca))
