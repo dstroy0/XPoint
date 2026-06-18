@@ -9,10 +9,13 @@ All notable changes to XPoint are documented here.
 
 
 ### CI / Build
+- update CHANGELOG.md [skip ci] ([`f9ab97c`](https://github.com/dstroy0/XPoint/commit/f9ab97c747319e68f84dde7859e4d0a8e3a8f315))
 - update CHANGELOG.md [skip ci] ([`8a2af58`](https://github.com/dstroy0/XPoint/commit/8a2af585dc61c35ec41864537051e4e498bac915))
 
 
 ### Changes
+- Merge branch 'main' of https://github.com/dstroy0/XPoint ([`15e9ee8`](https://github.com/dstroy0/XPoint/commit/15e9ee887a9dd532c5ffd06d73ee1c0d92fc281c))
+- split ci, update docs ([`6e0fe9c`](https://github.com/dstroy0/XPoint/commit/6e0fe9c4a0719fd588f31205d709f2042cda3ee1))
 - update action versions ([`e99d3dd`](https://github.com/dstroy0/XPoint/commit/e99d3dde444e68e4e62935500eae8dfd12b5ee03))
 - Merge branch 'main' of https://github.com/dstroy0/XPoint ([`69235ff`](https://github.com/dstroy0/XPoint/commit/69235ffca77ea8e46703464311d3894d8b1b3357))
 - update action versions ([`0f32b43`](https://github.com/dstroy0/XPoint/commit/0f32b43c35dd82ad8898f8cc187bf0bb7bf577e7))
