@@ -10,6 +10,7 @@ All notable changes to XPoint are documented here.
 
 
 ### CI / Build
+- update CHANGELOG.md [skip ci] ([`ed4753c`](https://github.com/dstroy0/XPoint/commit/ed4753c49758c7b1489f041af19038789943ab03))
 - update CHANGELOG.md [skip ci] ([`591b8e4`](https://github.com/dstroy0/XPoint/commit/591b8e4203bf663fd2c9e78123bbe2330211a07f))
 - update CHANGELOG.md [skip ci] ([`3b81e95`](https://github.com/dstroy0/XPoint/commit/3b81e9522c1a9c4d6f9f3f1b79734585260e4019))
 - update CHANGELOG.md [skip ci] ([`f9ab97c`](https://github.com/dstroy0/XPoint/commit/f9ab97c747319e68f84dde7859e4d0a8e3a8f315))
@@ -17,6 +18,7 @@ All notable changes to XPoint are documented here.
 
 
 ### Changes
+- update ci and add library.properties ([`0046302`](https://github.com/dstroy0/XPoint/commit/00463021a579a52156744de4798005c7e5f866a4))
 - Merge branch 'main' of https://github.com/dstroy0/XPoint ([`6117563`](https://github.com/dstroy0/XPoint/commit/611756335d2815b4b838a904b30df7004e2dea92))
 - comments, spelling, move drivers into src/drivers ([`288c788`](https://github.com/dstroy0/XPoint/commit/288c788db7230db77a4d9d1c6a9a0848a3ff4c6c))
 - Merge branch 'main' of https://github.com/dstroy0/XPoint ([`15e9ee8`](https://github.com/dstroy0/XPoint/commit/15e9ee887a9dd532c5ffd06d73ee1c0d92fc281c))
