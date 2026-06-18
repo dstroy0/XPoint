@@ -210,7 +210,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate CHANGELOG.md
-        uses: orhun/git-cliff-action@v6
+        uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
           args: --verbose
