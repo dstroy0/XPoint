@@ -1,5 +1,6 @@
 # XPoint
 
+[![Version](https://img.shields.io/github/v/tag/dstroy0/XPoint?label=version)](https://github.com/dstroy0/XPoint/tags)
 [![Host Tests](https://github.com/dstroy0/XPoint/actions/workflows/host-tests.yml/badge.svg)](https://github.com/dstroy0/XPoint/actions/workflows/host-tests.yml)
 [![PlatformIO](https://github.com/dstroy0/XPoint/actions/workflows/platformio.yml/badge.svg)](https://github.com/dstroy0/XPoint/actions/workflows/platformio.yml)
 [![Arduino](https://github.com/dstroy0/XPoint/actions/workflows/arduino.yml/badge.svg)](https://github.com/dstroy0/XPoint/actions/workflows/arduino.yml)
