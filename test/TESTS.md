@@ -1,11 +1,13 @@
-# XPoint test suite
+# XPoint test suite {#tests}
 
-All tests live in `test/test_xpoint.cpp` and are compiled and run on the host with a plain C++11 compiler (no Arduino hardware required). A minimal `Arduino.h` shim in `test/` satisfies any Arduino-specific headers included by the library sources.
+All tests live in `test/test_xpoint.cpp` and are compiled and run on the host with a plain C++11 compiler — no Arduino hardware required. A minimal `Arduino.h` shim in `test/` satisfies any Arduino-specific headers included by the library sources.
 
-Build and run:
+## Building and running
 
-```
-g++ -std=c++11 -Isrc -Itest \
+**Linux / macOS**
+
+```bash
+g++ -std=c++11 -Wall -Wextra -Wpedantic -Isrc -Itest \
   test/test_xpoint.cpp \
   src/XPoint.cpp \
   src/drivers/DirectGPIODriver.cpp \
@@ -14,6 +16,26 @@ g++ -std=c++11 -Isrc -Itest \
   src/drivers/TLC59711Driver.cpp \
   -o test_xpoint && ./test_xpoint
 ```
+
+Or use the helper script:
+
+```bash
+./test/build_and_run.sh
+```
+
+**Windows (PowerShell)**
+
+```powershell
+.\test\build_and_run_windows.ps1
+```
+
+**Custom parameterised run**
+
+```bash
+./test_xpoint --custom [--rows=N] [--cols=M] [--latching] [--pulse=N]
+```
+
+Helper scripts with hardware-profile presets: `test/run_custom_test.sh` / `test/run_custom_test.ps1`.
 
 ---
 
@@ -93,15 +115,13 @@ Calls `setLevel(0, 0, 0x8000)` through a `TLC59711Driver`-backed matrix and veri
 
 Calls `lockRows(0, 1)`, connects row 0 to column 0 via `setLevel(0, 0, 0x8000)`, then attempts `setLevel(1, 0, 0x4000)`. Verifies the first returns `true` and the second returns `false`, confirming interlock protections apply to `setLevel` on the connecting path.
 
+### `latching rapid connect/disconnect`
+
+Regression test for the in-flight pulse race condition. Calls `connect(0, 0)` to start a SET coil pulse, then immediately calls `disconnect(0, 0)` before the pulse expires — verifies it returns `false` (coil busy). Advances the clock past `pulseDuration` and calls `update()` to fire `releaseNode`. Verifies `disconnect(0, 0)` now succeeds.
+
 ---
 
-## Custom parameterised tests (--custom flag)
-
-Pass `--custom` to the test binary to run a configurable matrix test instead of the fixed suite. The `test/run_custom_test.ps1` and `test/run_custom_test.sh` scripts drive this with hardware-profile presets and interactive prompts.
-
-```
-./test_xpoint --custom [--rows=N] [--cols=M] [--latching] [--pulse=N]
-```
+## Custom parameterised tests (`--custom` flag)
 
 Each sub-test uses `MockDriver` so all driver calls are directly observable regardless of the matrix size.
 

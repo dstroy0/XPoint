@@ -1,6 +1,12 @@
 # XPoint
 
+[![Host tests](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml/badge.svg?job=host-tests)](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml)
+[![PlatformIO builds](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml/badge.svg?job=platformio)](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml)
+[![Docs](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml/badge.svg?job=docs)](https://dstroy0.github.io/XPoint/)
+
 A small, hardware-agnostic C++11 library for managing crosspoint matrices and signal routing on Arduino and PlatformIO targets. Designed to work on everything from AVR (Uno/Nano) to ESP32 and ARM without pulling in the C++ standard library.
+
+**[API Documentation](https://dstroy0.github.io/XPoint/)**
 
 ## Features
 
@@ -13,33 +19,10 @@ A small, hardware-agnostic C++11 library for managing crosspoint matrices and si
 
 ## Quick Start
 
-### PlatformIO
-
 Add to your `platformio.ini`:
 
 ```ini
 lib_deps = https://github.com/dstroy0/XPoint
-```
-
-### Host test build
-
-Requires only a C++11 compiler. From the project root:
-
-```bash
-g++ -std=c++11 -Isrc -Itest \
-  test/test_xpoint.cpp \
-  src/XPoint.cpp \
-  src/drivers/DirectGPIODriver.cpp \
-  src/drivers/ShiftRegisterDriver.cpp \
-  src/drivers/MCP23017Driver.cpp \
-  src/drivers/TLC59711Driver.cpp \
-  -o test_xpoint && ./test_xpoint
-```
-
-On Windows (`test/build_and_run_windows.ps1` does this automatically):
-
-```powershell
-.\test\build_and_run_windows.ps1
 ```
 
 ## Usage
@@ -104,16 +87,16 @@ Common matrix sizes:
 | 32-bit ARM / ESP32                       | ~100 B           |
 | 64-bit host                              | 152 B (measured) |
 
-The overhead is dominated by `PulseEvent _activePulses[8]` — 8 slots × 7 bytes each on AVR (56 B), 8 × 12 bytes on 32-bit (96 B). The remaining bytes are the scalar members and three buffer pointers.
+The overhead is dominated by `PulseEvent _activePulses[8]` — 8 slots × 7 bytes each on AVR (56 B), 8 × 12 bytes on 32-bit (96 B).
 
 Verify on your target with:
 
 ```cpp
-Serial.println(sizeof(XPoint));         // base class only
-Serial.println(sizeof(XPointStatic<4,4>));  // base + embedded buffers
+Serial.println(sizeof(XPoint));
+Serial.println(sizeof(XPointStatic<4,4>));
 ```
 
-**Heap vs. `XPointStatic`**: both strategies consume the same total bytes. `XPointStatic<R,C>` embeds the buffers directly in the object (BSS / global storage), so the heap is never touched and there is no fragmentation risk. With the heap constructor the buffers are allocated separately; heap overhead depends on the allocator but is typically 4–8 bytes of block metadata per allocation.
+**Heap vs. `XPointStatic`**: both strategies consume the same total bytes. `XPointStatic<R,C>` embeds the buffers directly in the object (BSS / global storage), so the heap is never touched and there is no fragmentation risk.
 
 ### Basic matrix operations
 
@@ -210,7 +193,7 @@ static uint8_t mapper(uint8_t r, uint8_t c) { return (uint8_t)(r * 4 + c); }
 MCP23017Driver expander(&i2c, 0x20, mapper);
 
 // setup():
-i2c.begin();           // or call expander via I2CInterface pointer
+i2c.begin();
 expander.begin();      // sets IODIRA/IODIRB to all-outputs before driving OLAT
 ```
 
@@ -295,6 +278,10 @@ auto myMapper = [](uint8_t r, uint8_t c) -> uint8_t { return (uint8_t)(r * 4 + c
 
 `HC595Helper::rowMajorIndex(row, col, cols)` computes a row-major shift-register bit index inline.
 
+## Testing
+
+See [test/TESTS.md](test/TESTS.md) for the full test suite description, build instructions, and mock infrastructure reference.
+
 ## Project layout
 
 ```
@@ -312,8 +299,9 @@ src/
     ShiftRegisterDriver.*      — virtual shift-register driver (host tests)
     HC595Helper.h              — shift-register index utility
 test/
+  test_xpoint.cpp              — host test suite (17 tests, no framework required)
   Arduino.h                    — minimal Arduino shim for host builds
-  test_xpoint.cpp              — host test suite (no framework required)
+  TESTS.md                     — test descriptions and build instructions
 examples/
   basic/
     ConnectDisconnect/  — minimal API walkthrough: connect, clearAll, Serial log
@@ -336,7 +324,7 @@ GitHub Actions runs on every push and PR to `main`/`master`:
 
 1. **Host tests** — `g++` compiles and runs `test/test_xpoint.cpp` (17 tests, no Arduino headers)
 2. **PlatformIO** — 8 boards × 7 examples (56 parallel jobs): ATmega328P/2560/32U4, SAMD21, SAM3X8E, ESP8266, ESP32, iMXRT1062
-3. **Doxygen** — generates dark-themed HTML docs and uploads them as a build artifact
+3. **Doxygen** — generates dark-themed HTML docs and deploys to [GitHub Pages](https://dstroy0.github.io/XPoint/)
 
 ## License
 

@@ -14,11 +14,11 @@ OUTPUT_DIRECTORY       = docs
 #---------------------------------------------------------------------------
 # Input
 #---------------------------------------------------------------------------
-INPUT                  = src README.md
-FILE_PATTERNS          = *.h *.cpp
+INPUT                  = src README.md test/TESTS.md
+FILE_PATTERNS          = *.h *.cpp *.md
 RECURSIVE              = YES
 USE_MDFILE_AS_MAINPAGE = README.md
-EXCLUDE_PATTERNS       = */test/* */examples/*
+EXCLUDE_PATTERNS       = */test/*.h */test/*.cpp */examples/*
 
 #---------------------------------------------------------------------------
 # Extraction
