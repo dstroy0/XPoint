@@ -28,7 +28,7 @@
 #ifndef TLC59711_DRIVER_H
 #define TLC59711_DRIVER_H
 
-#include "../XPointDriver.h"
+#include "XPointDriver.h"
 #include <stdint.h>
 
 /**
@@ -58,7 +58,7 @@ class TLC59711Driver : public XPointDriver
     ~TLC59711Driver();
 
     /**
-     * @brief Initialise the SPI bus by calling `SPI.begin()`.
+     * @brief Initialize the SPI bus by calling `SPI.begin()`.
      * No-op on host builds.
      */
     void begin() override;

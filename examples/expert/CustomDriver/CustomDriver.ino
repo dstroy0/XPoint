@@ -24,8 +24,8 @@ class SerialDebugDriver : public XPointDriver
     }
 
     // Required: called by connect() / disconnect() / clearAll().
-    // state=true  → connect  (energise relay, drive output HIGH)
-    // state=false → disconnect (de-energise relay, drive output LOW)
+    // state=true  → connect  (energize relay, drive output HIGH)
+    // state=false → disconnect (de-energize relay, drive output LOW)
     void setNodeHardware(uint8_t row, uint8_t col, bool state) override
     {
         Serial.print("[driver] setNodeHardware(");
@@ -48,7 +48,7 @@ class SerialDebugDriver : public XPointDriver
         Serial.println(level, HEX);
     }
 
-    // Optional: override for latching relays — de-energise coil after pulse.
+    // Optional: override for latching relays — de-energize coil after pulse.
     void releaseNode(uint8_t row, uint8_t col) override
     {
         Serial.print("[driver] releaseNode(");
@@ -84,7 +84,7 @@ void setup()
     matrix.connect(0, 0);
     matrix.connect(2, 3);
 
-    Serial.println("--- setLevel (analogue) ---");
+    Serial.println("--- setLevel (analog) ---");
     matrix.setLevel(3, 1, 0x8000); // 50 %
 
     Serial.println("--- clearAll ---");

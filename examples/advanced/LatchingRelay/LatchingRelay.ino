@@ -53,8 +53,8 @@ class DualCoilDriver : public XPointDriver
         }
     }
 
-    // state=true  → energise SET   coil (relay closes)
-    // state=false → energise RESET coil (relay opens)
+    // state=true  → energize SET   coil (relay closes)
+    // state=false → energize RESET coil (relay opens)
     void setNodeHardware(uint8_t row, uint8_t col, bool state) override
     {
         if (state)
@@ -69,7 +69,7 @@ class DualCoilDriver : public XPointDriver
         }
     }
 
-    // Called automatically after pulseDuration ms to de-energise the coil.
+    // Called automatically after pulseDuration ms to de-energize the coil.
     // The relay keeps its position with no power until the next pulse.
     void releaseNode(uint8_t row, uint8_t col) override
     {

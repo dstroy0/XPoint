@@ -20,7 +20,7 @@
 #ifndef ARDUINO_DIRECT_GPIO_DRIVER_H
 #define ARDUINO_DIRECT_GPIO_DRIVER_H
 
-#include "../XPointDriver.h"
+#include "XPointDriver.h"
 #include <stdint.h>
 
 #if defined(ARDUINO)

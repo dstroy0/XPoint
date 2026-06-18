@@ -21,7 +21,7 @@
 #ifndef ARDUINO_SHIFT_REGISTER_DRIVER_H
 #define ARDUINO_SHIFT_REGISTER_DRIVER_H
 
-#include "../XPointDriver.h"
+#include "XPointDriver.h"
 #include <stdint.h>
 
 #if defined(ARDUINO)

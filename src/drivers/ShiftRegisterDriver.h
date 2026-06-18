@@ -17,7 +17,7 @@
 #ifndef SHIFT_REGISTER_DRIVER_H
 #define SHIFT_REGISTER_DRIVER_H
 
-#include "../XPointDriver.h"
+#include "XPointDriver.h"
 #include <stdint.h>
 
 /**

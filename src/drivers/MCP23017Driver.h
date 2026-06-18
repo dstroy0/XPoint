@@ -26,14 +26,14 @@
 #ifndef MCP23017_DRIVER_H
 #define MCP23017_DRIVER_H
 
-#include "../I2CInterface.h"
-#include "../XPointDriver.h"
+#include "I2CInterface.h"
+#include "XPointDriver.h"
 #include <stdint.h>
 
 /**
  * @brief XPointDriver implementation for the MCP23017 16-bit I2C GPIO expander.
  *
- * Maintains shadow copies of OLATA and OLATB to minimise I2C transactions;
+ * Maintains shadow copies of OLATA and OLATB to minimize I2C transactions;
  * both registers are written atomically on each setNodeHardware() call.
  */
 class MCP23017Driver : public XPointDriver

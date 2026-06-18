@@ -19,9 +19,9 @@
  *
  * **Dual-coil latching relay protocol** (RE_LATCHING_DUAL_COIL):
  * @code
- * setNodeHardware(r, c, true)   // energise SET   coil — relay closes
- * setNodeHardware(r, c, false)  // energise RESET coil — relay opens
- * releaseNode(r, c)             // de-energise coil — called by XPoint::update()
+ * setNodeHardware(r, c, true)   // energize SET   coil — relay closes
+ * setNodeHardware(r, c, false)  // energize RESET coil — relay opens
+ * releaseNode(r, c)             // de-energize coil — called by XPoint::update()
  * commitPhysicalUpdates()       // flush state — called after every operation
  * @endcode
  */
@@ -45,7 +45,7 @@ class XPointDriver
     }
 
     /**
-     * @brief Initialise hardware: pin modes, bus setup, initial output state.
+     * @brief Initialize hardware: pin modes, bus setup, initial output state.
      *
      * Called once by XPoint::begin().  Must be overridden.
      */
@@ -54,7 +54,7 @@ class XPointDriver
     /**
      * @brief Drive one matrix node on or off.
      *
-     * - Non-latching: @p state `true` = energise, `false` = de-energise.
+     * - Non-latching: @p state `true` = energize, `false` = de-energize.
      * - Latching dual-coil: @p state `true` = pulse SET coil, `false` = pulse RESET coil.
      *
      * @param[in] r     Row index (zero-based).
@@ -64,7 +64,7 @@ class XPointDriver
     virtual void setNodeHardware(uint8_t r, uint8_t c, bool state) = 0;
 
     /**
-     * @brief Set an analogue drive level for node (r, c).
+     * @brief Set an analog drive level for node (r, c).
      *
      * Range: `0x0000` (off) to `0xFFFF` (full on).
      * The default implementation delegates to setNodeHardware(`level > 0`) so
@@ -82,7 +82,7 @@ class XPointDriver
     }
 
     /**
-     * @brief De-energise the coil that was pulsed on node (r, c).
+     * @brief De-energize the coil that was pulsed on node (r, c).
      *
      * Called automatically by XPoint::update() once @p pulseDuration ms have
      * elapsed since the coil was activated.  Non-latching drivers can leave

@@ -8,11 +8,11 @@
  *
  * Maintains a logical R×C connection state table and forwards every change to
  * an XPointDriver backend.  Supports:
- * - Non-latching relays: energise to connect, de-energise to disconnect
+ * - Non-latching relays: energize to connect, de-energize to disconnect
  * - Dual-coil latching relays: non-blocking SET/RESET coil pulse management
  * - Row interlock: prevent two rows from connecting to the same column
  * - Exclusive-input columns: only one row permitted at a time
- * - Analogue level control via setLevel() for PWM-capable drivers
+ * - analog level control via setLevel() for PWM-capable drivers
  *
  * **Flat array layout** (all indices zero-based):
  * | Array    | Size             | Meaning                             |
@@ -43,25 +43,25 @@
 #ifndef XPOINT_H
 #define XPOINT_H
 
-#include "XPointDriver.h"
+#include "drivers/XPointDriver.h"
 #include <stdint.h>
 #include <string.h>
 
 /**
  * @brief Relay operating mode.
  *
- * Passed to the XPoint / XPointStatic constructor to select coil behaviour.
+ * Passed to the XPoint / XPointStatic constructor to select coil behavior.
  */
 enum RelayType
 {
-    RE_NON_LATCHING      = 0, ///< Energise to connect; de-energise to disconnect.
-    RE_LATCHING_DUAL_COIL    ///< SET coil to connect; RESET coil to disconnect.
+    RE_NON_LATCHING = 0,  ///< energize to connect; de-energize to disconnect.
+    RE_LATCHING_DUAL_COIL ///< SET coil to connect; RESET coil to disconnect.
 };
 
 /**
  * @brief Internal pulse-event slot for non-blocking latching-relay coil timing.
  *
- * One slot is occupied from the moment a coil is energised until update()
+ * One slot is occupied from the moment a coil is energized until update()
  * detects that @p pulseDuration ms have elapsed and calls releaseNode().
  * Managed exclusively by XPoint; not part of the public API.
  */
@@ -69,7 +69,7 @@ struct PulseEvent
 {
     uint8_t r;        ///< Matrix row.
     uint8_t c;        ///< Matrix column.
-    unsigned long t0; ///< millis() at coil energise.
+    unsigned long t0; ///< millis() at coil energize.
     bool on;          ///< `true` = slot occupied.
 };
 
@@ -109,8 +109,8 @@ class XPoint
      * @param[in] type  Relay operating mode.
      * @param[in] pdur  Coil pulse duration in ms.
      */
-    XPoint(uint8_t rows, uint8_t cols, bool *state, bool *ilock, bool *excl,
-           RelayType type = RE_NON_LATCHING, uint16_t pdur = 0);
+    XPoint(uint8_t rows, uint8_t cols, bool *state, bool *ilock, bool *excl, RelayType type = RE_NON_LATCHING,
+           uint16_t pdur = 0);
 
     /** @brief Destructor. Frees heap buffers only when constructed with the heap constructor. */
     ~XPoint();
@@ -128,7 +128,7 @@ class XPoint
     void setDriver(XPointDriver *drv);
 
     /**
-     * @brief Initialise hardware by calling `drv->begin()`.
+     * @brief Initialize hardware by calling `drv->begin()`.
      *
      * Call once after setDriver() and before any connect / disconnect calls.
      */
@@ -163,7 +163,7 @@ class XPoint
     bool disconnect(uint8_t row, uint8_t col);
 
     /**
-     * @brief Analogue-level connect / disconnect (PWM drivers).
+     * @brief analog-level connect / disconnect (PWM drivers).
      *
      * - `level > 0`: connecting path — interlock and exclusive-input rules apply.
      * - `level == 0`: disconnecting path — rules are not checked.
@@ -184,7 +184,7 @@ class XPoint
      *
      * For RE_LATCHING_DUAL_COIL, pulses the RESET coil on each connected node
      * and registers pulse events (up to MAX_PULSES; excess nodes are silently
-     * skipped — their hardware timeout must de-energise any excess coils).
+     * skipped — their hardware timeout must de-energize any excess coils).
      * Any stale in-flight SET-coil pulses are cancelled before registering the
      * RESET pulses so freed slots remain available.
      */
@@ -218,19 +218,19 @@ class XPoint
     void update();
 
   private:
-    uint8_t _rows;  ///< Row count.
-    uint8_t _cols;  ///< Column count.
-    RelayType _type; ///< Relay operating mode.
-    uint16_t _pdur; ///< Coil pulse duration in ms (RE_LATCHING_DUAL_COIL only).
+    uint8_t _rows;      ///< Row count.
+    uint8_t _cols;      ///< Column count.
+    RelayType _type;    ///< Relay operating mode.
+    uint16_t _pdur;     ///< Coil pulse duration in ms (RE_LATCHING_DUAL_COIL only).
     XPointDriver *_drv; ///< Attached driver backend.
-    bool _owns;     ///< `true` = destructor frees _state, _ilock, _excl.
+    bool _owns;         ///< `true` = destructor frees _state, _ilock, _excl.
 
     bool *_state; ///< [_rows * _cols]  Logical connection table.
     bool *_ilock; ///< [_rows * _rows]  Row-pair interlock flags (symmetric).
     bool *_excl;  ///< [_cols]          Exclusive-input column flags.
 
     static const uint8_t MAX_PULSES = 8; ///< Maximum simultaneous in-flight pulses.
-    PulseEvent _pulses[MAX_PULSES]; ///< Pulse event table.
+    PulseEvent _pulses[MAX_PULSES];      ///< Pulse event table.
 
     /** @brief Zero buffers and pulse table; called by both constructors. */
     void _init();
@@ -252,8 +252,7 @@ class XPoint
  * @tparam ROWS Number of matrix rows (compile-time constant).
  * @tparam COLS Number of matrix columns (compile-time constant).
  */
-template <uint8_t ROWS, uint8_t COLS>
-class XPointStatic : public XPoint
+template <uint8_t ROWS, uint8_t COLS> class XPointStatic : public XPoint
 {
     bool _stateBuf[ROWS * COLS]; ///< Embedded connection state [ROWS * COLS].
     bool _ilockBuf[ROWS * ROWS]; ///< Embedded interlock map    [ROWS * ROWS].

@@ -32,7 +32,7 @@ class I2CInterface
     }
 
     /**
-     * @brief Initialise the I2C bus.
+     * @brief Initialize the I2C bus.
      *
      * Default no-op: safe for mock objects or buses started elsewhere.
      * WireI2C overrides this to call `Wire.begin()`.

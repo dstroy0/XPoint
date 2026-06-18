@@ -55,7 +55,7 @@ Obtains a `MockI2C*` through an `I2CInterface*` base pointer and calls `begin()`
 
 ### `latching connect pulse`
 
-Creates a `RE_LATCHING_DUAL_COIL` matrix with a 10 ms pulse duration. Calls `connect(0, 1)` and checks that exactly one `setNodeHardware` call was made with `state=true` (SET coil energised) and that `releaseNode` has not yet been called. Advances the mock clock past the pulse duration and calls `update()`; checks that `releaseNode(0, 1)` was called exactly once and that no additional `setNodeHardware` calls were made.
+Creates a `RE_LATCHING_DUAL_COIL` matrix with a 10 ms pulse duration. Calls `connect(0, 1)` and checks that exactly one `setNodeHardware` call was made with `state=true` (SET coil energized) and that `releaseNode` has not yet been called. Advances the mock clock past the pulse duration and calls `update()`; checks that `releaseNode(0, 1)` was called exactly once and that no additional `setNodeHardware` calls were made.
 
 ### `latching disconnect pulse`
 
@@ -63,7 +63,7 @@ Extends the latching connect scenario: after the SET pulse expires, clears the c
 
 ### `nonlatching disconnect no spurious call`
 
-Connects then disconnects a node on a `RE_NON_LATCHING` matrix. Verifies that `disconnect` produces exactly one `setNodeHardware(false)` call — catching the historical bug where an unconditional `setNodeHardware(true)` was fired before the de-energise call.
+Connects then disconnects a node on a `RE_NON_LATCHING` matrix. Verifies that `disconnect` produces exactly one `setNodeHardware(false)` call — catching the historical bug where an unconditional `setNodeHardware(true)` was fired before the de-energize call.
 
 ### `interlock`
 

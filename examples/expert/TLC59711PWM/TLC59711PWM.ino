@@ -1,4 +1,4 @@
-// XPoint — TLC59711 analogue level control (1×12 matrix, one chip)
+// XPoint — TLC59711 analog level control (1×12 matrix, one chip)
 //
 // The TLC59711 is a 12-channel 16-bit PWM constant-current LED/relay driver.
 // connect()      → channel full on  (0xFFFF)

@@ -114,7 +114,7 @@ matrix.clearAll();         // de-energize everything
 matrix.update();           // required for latching relays
 ```
 
-### Analogue level (`setLevel`)
+### analog level (`setLevel`)
 
 `setLevel(row, col, level)` calls `driver->setNodeLevel()` instead of `setNodeHardware()`. Binary drivers (GPIO, shift register) treat `level > 0` as on and `0` as off. PWM-capable drivers (TLC59711) set the actual fractional output:
 
@@ -124,7 +124,7 @@ matrix.setLevel(0, 1, 0xFFFF); // full on
 matrix.setLevel(0, 1, 0x8000); // treated as on (level > 0)
 matrix.setLevel(0, 1, 0);      // off
 
-// TLC59711 driver — true analogue control:
+// TLC59711 driver — true analog control:
 matrix.setLevel(0, 0, 0xFFFF); // full brightness / drive current
 matrix.setLevel(0, 0, 0x4000); // 25 % — useful for hold-current reduction
 matrix.setLevel(0, 0, 0);      // off
@@ -142,11 +142,11 @@ matrix.exclusiveInput(3);  // column 3 accepts only one row at a time
 ### Latching relay configuration
 
 ```cpp
-// pulseDuration in milliseconds — how long the SET/RESET coil is energised
+// pulseDuration in milliseconds — how long the SET/RESET coil is energized
 XPointStatic<4, 4> matrix(RE_LATCHING_DUAL_COIL, 20);
 ```
 
-Call `matrix.update()` in `loop()`. It de-energises coils automatically after the pulse duration via `driver->releaseNode()`.
+Call `matrix.update()` in `loop()`. It de-energizes coils automatically after the pulse duration via `driver->releaseNode()`.
 
 ## Drivers
 
@@ -222,12 +222,12 @@ Inherit from `XPointDriver` and implement `begin()` and `setNodeHardware()`. All
 class MyDriver : public XPointDriver {
 public:
     void begin() override {
-        // initialise hardware
+        // initialize hardware
     }
 
     void setNodeHardware(uint8_t row, uint8_t col, bool state) override {
-        // state=true  → energise / connect
-        // state=false → de-energise / disconnect
+        // state=true  → energize / connect
+        // state=false → de-energize / disconnect
         //               (for latching dual-coil: RESET coil direction)
     }
 
@@ -236,7 +236,7 @@ public:
         // level 0..0xFFFF
     }
 
-    // Optional — override for latching relays to de-energise after pulse:
+    // Optional — override for latching relays to de-energize after pulse:
     void releaseNode(uint8_t row, uint8_t col) override {
         // stop driving whichever coil was pulsed
     }
@@ -252,7 +252,7 @@ public:
 | ------------------ | --------------------- | ---------------- |
 | `connect()`        | `true`                | Pulse SET coil   |
 | `disconnect()`     | `false`               | Pulse RESET coil |
-| `update()` expires | `releaseNode()`       | De-energise coil |
+| `update()` expires | `releaseNode()`       | De-energize coil |
 
 ### Mapper functions
 
@@ -289,9 +289,9 @@ See [test/TESTS.md](test/TESTS.md) for the full test suite description, build in
 ```
 src/
   XPoint.h / XPoint.cpp        — core matrix class + XPointStatic template
-  XPointDriver.h               — abstract driver interface
-  I2CInterface.h               — abstract I2C interface
   drivers/
+    XPointDriver.h             — abstract driver interface
+    I2CInterface.h             — abstract I2C interface
     ArduinoDirectGPIODriver.*  — Arduino GPIO driver
     ArduinoShiftRegisterDriver.* — Arduino 74HC595 shift-out driver
     MCP23017Driver.*           — MCP23017 I2C expander driver
@@ -313,7 +313,7 @@ examples/
     LatchingRelay/      — dual-coil latching relay with non-blocking pulse timing
     MCP23017Matrix/     — 2×8 via MCP23017 I2C expander
   expert/
-    TLC59711PWM/        — 12-channel analogue level sweep via TLC59711
+    TLC59711PWM/        — 12-channel analog level sweep via TLC59711
     CustomDriver/       — implement XPointDriver from scratch (no hardware needed)
   WIRING.md             — wiring patterns, transistor driver circuit
   schematics/           — transistor driver reference schematic

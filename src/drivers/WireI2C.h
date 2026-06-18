@@ -17,7 +17,7 @@
 #ifndef WIRE_I2C_H
 #define WIRE_I2C_H
 
-#include "../I2CInterface.h"
+#include "I2CInterface.h"
 
 #if defined(ARDUINO)
 #include <Wire.h>
@@ -41,7 +41,7 @@ class WireI2C : public I2CInterface
     }
 
     /**
-     * @brief Initialise the I2C bus by calling `Wire.begin()`.
+     * @brief Initialize the I2C bus by calling `Wire.begin()`.
      *
      * No-op on host builds.
      */

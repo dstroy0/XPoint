@@ -16,9 +16,9 @@
 #include <utility>
 #include <vector>
 
-#include "../src/I2CInterface.h"
+#include "../src/drivers/I2CInterface.h"
 #include "../src/XPoint.h"
-#include "../src/XPointDriver.h"
+#include "../src/drivers/XPointDriver.h"
 #include "../src/drivers/DirectGPIODriver.h"
 #include "../src/drivers/MCP23017Driver.h"
 #include "../src/drivers/ShiftRegisterDriver.h"
@@ -229,7 +229,7 @@ static bool test_latching_rapid_connect_disconnect()
     m.begin();
 
     g_millis = 0;
-    m.connect(0, 0); // SET coil energised; pulse registered at t=0
+    m.connect(0, 0); // SET coil energized; pulse registered at t=0
 
     /* disconnect() while SET pulse is in-flight must be rejected. */
     advanceMillis(5);
@@ -614,7 +614,7 @@ static bool ctest_exclusive(uint8_t rows, uint8_t cols)
 }
 
 /*
- * connect() energises SET coil (state=true); disconnect() energises RESET coil
+ * connect() energizes SET coil (state=true); disconnect() energizes RESET coil
  * (state=false); update() calls releaseNode() after pulseDuration elapses.
  */
 static bool ctest_latching(uint8_t rows, uint8_t cols, uint16_t pdur)

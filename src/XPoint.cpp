@@ -115,7 +115,7 @@ bool XPoint::connect(uint8_t row, uint8_t col)
 
     if (_drv)
     {
-        _drv->setNodeHardware(row, col, true); // true = energise / SET coil
+        _drv->setNodeHardware(row, col, true); // true = energize / SET coil
         _drv->commitPhysicalUpdates();
     }
 
@@ -156,7 +156,7 @@ bool XPoint::disconnect(uint8_t row, uint8_t col)
     {
         if (_drv)
         {
-            _drv->setNodeHardware(row, col, false); // false = energise RESET coil
+            _drv->setNodeHardware(row, col, false); // false = energize RESET coil
             _drv->commitPhysicalUpdates();
         }
         unsigned long now = millis();

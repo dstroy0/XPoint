@@ -33,7 +33,7 @@ void setup()
 {
     Serial.begin(115200);
 
-    // begin() initialises Wire and configures MCP23017 IODIRA/B as all-outputs.
+    // begin() initializes Wire and configures MCP23017 IODIRA/B as all-outputs.
     i2c.begin();
     expander.begin();
 

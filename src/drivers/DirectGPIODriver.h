@@ -16,7 +16,7 @@
 #ifndef DIRECT_GPIO_DRIVER_H
 #define DIRECT_GPIO_DRIVER_H
 
-#include "../XPointDriver.h"
+#include "XPointDriver.h"
 #include <stdint.h>
 
 /**
