@@ -1,8 +1,10 @@
 # XPoint
 
-[![Host tests](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml/badge.svg?job=host-tests)](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml)
-[![PlatformIO builds](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml/badge.svg?job=platformio)](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml)
-[![Docs](https://github.com/dstroy0/XPoint/actions/workflows/ci.yml/badge.svg?job=docs)](https://dstroy0.github.io/XPoint/)
+[![Host Tests](https://github.com/dstroy0/XPoint/actions/workflows/host-tests.yml/badge.svg)](https://github.com/dstroy0/XPoint/actions/workflows/host-tests.yml)
+[![PlatformIO](https://github.com/dstroy0/XPoint/actions/workflows/platformio.yml/badge.svg)](https://github.com/dstroy0/XPoint/actions/workflows/platformio.yml)
+[![Arduino](https://github.com/dstroy0/XPoint/actions/workflows/arduino.yml/badge.svg)](https://github.com/dstroy0/XPoint/actions/workflows/arduino.yml)
+[![Docs](https://github.com/dstroy0/XPoint/actions/workflows/docs.yml/badge.svg)](https://dstroy0.github.io/XPoint/)
+[![Changelog](https://github.com/dstroy0/XPoint/actions/workflows/changelog.yml/badge.svg)](https://github.com/dstroy0/XPoint/actions/workflows/changelog.yml)
 
 A small, hardware-agnostic C++11 library for managing crosspoint matrices and signal routing on Arduino and PlatformIO targets. Designed to work on everything from AVR (Uno/Nano) to ESP32 and ARM without pulling in the C++ standard library.
 

@@ -1,0 +1,86 @@
+name: Arduino
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: arduino-${{ github.ref }}
+  cancel-in-progress: true
+
+# Matrix: 4 Arduino-official boards × 7 examples via arduino-cli.
+# Covers the boards supported by the Arduino IDE board manager without
+# requiring PlatformIO — useful for users who develop in the Arduino IDE.
+#
+# Board FQBN                          MCU          Flash   SRAM
+# ──────────────────────────────────────────────────────────────
+# arduino:avr:uno       ATmega328P    avr           32 KB   2 KB
+# arduino:avr:mega      ATmega2560    avr          256 KB   8 KB
+# arduino:samd:mkrzero  SAMD21G18A    samd         256 KB  32 KB
+# arduino:sam:arduino_due_x SAM3X8E   sam3x        512 KB  96 KB
+
+jobs:
+  arduino:
+    name: arduino / ${{ matrix.fqbn }} / ${{ matrix.sketch }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        fqbn:
+          - arduino:avr:uno
+          - arduino:avr:mega
+          - arduino:samd:mkrzero
+          - arduino:sam:arduino_due_x
+        sketch:
+          - examples/basic/ConnectDisconnect/ConnectDisconnect.ino
+          - examples/basic/DirectGPIO/DirectGPIO.ino
+          - examples/advanced/ShiftRegister/ShiftRegister.ino
+          - examples/advanced/LatchingRelay/LatchingRelay.ino
+          - examples/advanced/MCP23017Matrix/MCP23017Matrix.ino
+          - examples/expert/TLC59711PWM/TLC59711PWM.ino
+          - examples/expert/CustomDriver/CustomDriver.ino
+
+        # Attach the core package name to each FQBN for cache keying.
+        include:
+          - fqbn: arduino:avr:uno
+            core: arduino:avr
+          - fqbn: arduino:avr:mega
+            core: arduino:avr
+          - fqbn: arduino:samd:mkrzero
+            core: arduino:samd
+          - fqbn: arduino:sam:arduino_due_x
+            core: arduino:sam
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.arduino15
+          key: arduino-${{ matrix.core }}-${{ hashFiles('library.json') }}
+          restore-keys: |
+            arduino-${{ matrix.core }}-
+
+      - name: Install core
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install ${{ matrix.core }}
+
+      - name: Install library
+        run: arduino-cli lib install --zip-path . || true
+
+      - name: Compile ${{ matrix.fqbn }} — ${{ matrix.sketch }}
+        run: |
+          arduino-cli compile \
+            --fqbn ${{ matrix.fqbn }} \
+            --libraries . \
+            ${{ matrix.sketch }}

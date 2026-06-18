@@ -1,0 +1,101 @@
+name: PlatformIO
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: platformio-${{ github.ref }}
+  cancel-in-progress: true
+
+# Matrix: 8 target boards × 7 examples = 56 parallel build jobs.
+# fail-fast is off so every combination reports independently.
+#
+# Board          MCU            Arch    Flash    SRAM
+# ─────────────────────────────────────────────────────
+# uno            ATmega328P     avr      32 KB    2 KB
+# megaatmega2560 ATmega2560     avr     256 KB    8 KB
+# leonardo       ATmega32U4     avr      32 KB  2.5 KB
+# zero           SAMD21G18A     samd    256 KB   32 KB
+# due            SAM3X8E        sam3x   512 KB   96 KB
+# nodemcuv2      ESP8266EX      esp8      4 MB   80 KB
+# esp32dev       ESP32-D0WDQ6   esp32     4 MB  520 KB
+# teensy41       iMXRT1062      imxrt     8 MB    1 MB
+
+jobs:
+  platformio:
+    name: pio / ${{ matrix.board }} / ${{ matrix.sketch }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        board:
+          - uno
+          - megaatmega2560
+          - leonardo
+          - zero
+          - due
+          - nodemcuv2
+          - esp32dev
+          - teensy41
+        sketch:
+          - examples/basic/ConnectDisconnect/ConnectDisconnect.ino
+          - examples/basic/DirectGPIO/DirectGPIO.ino
+          - examples/advanced/ShiftRegister/ShiftRegister.ino
+          - examples/advanced/LatchingRelay/LatchingRelay.ino
+          - examples/advanced/MCP23017Matrix/MCP23017Matrix.ino
+          - examples/expert/TLC59711PWM/TLC59711PWM.ino
+          - examples/expert/CustomDriver/CustomDriver.ino
+
+        # Attach the PlatformIO platform name to each board so the cache key
+        # is shared across boards that use the same platform toolchain.
+        include:
+          - board: uno
+            platform: atmelavr
+          - board: megaatmega2560
+            platform: atmelavr
+          - board: leonardo
+            platform: atmelavr
+          - board: zero
+            platform: atmelsam
+          - board: due
+            platform: atmelsam
+          - board: nodemcuv2
+            platform: espressif8266
+          - board: esp32dev
+            platform: espressif32
+          - board: teensy41
+            platform: teensy
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      # Cache the PlatformIO package store (toolchains, frameworks, board defs)
+      # keyed on platform + library.json so a dependency change busts the cache.
+      # Boards sharing a platform (uno/mega/leonardo → atmelavr) share a key.
+      - uses: actions/cache@v5
+        with:
+          path: ~/.platformio
+          key: pio-${{ matrix.platform }}-${{ hashFiles('library.json') }}
+          restore-keys: |
+            pio-${{ matrix.platform }}-
+
+      - name: Install PlatformIO
+        run: pip install -U platformio
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ${{ matrix.board }} — ${{ matrix.sketch }}
+        run: pio ci --lib="." --board=${{ matrix.board }} ${{ matrix.sketch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

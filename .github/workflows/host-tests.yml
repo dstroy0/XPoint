@@ -1,0 +1,45 @@
+name: Host Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: host-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-tests:
+    name: Host tests (g++)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build test binary
+        run: |
+          g++ -std=c++11 -Wall -Wextra -Wpedantic -Isrc -Itest \
+            test/test_xpoint.cpp \
+            src/XPoint.cpp \
+            src/drivers/DirectGPIODriver.cpp \
+            src/drivers/ShiftRegisterDriver.cpp \
+            src/drivers/MCP23017Driver.cpp \
+            src/drivers/TLC59711Driver.cpp \
+            -o test_xpoint
+
+      - name: Run unit tests
+        run: ./test_xpoint
+
+      - name: Custom tests — 4×4 non-latching
+        run: ./test_xpoint --custom --rows=4 --cols=4
+
+      - name: Custom tests — 8×8 latching pulse=20ms
+        run: ./test_xpoint --custom --rows=8 --cols=8 --latching --pulse=20
+
+      - name: Custom tests — 1×16 latching pulse=50ms
+        run: ./test_xpoint --custom --rows=1 --cols=16 --latching --pulse=50
