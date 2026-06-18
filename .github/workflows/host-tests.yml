@@ -21,25 +21,38 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build test binary
+      - name: Build unit test binary
         run: |
           g++ -std=c++11 -Wall -Wextra -Wpedantic -Isrc -Itest \
             test/test_xpoint.cpp \
             src/XPoint.cpp \
+            src/drivers/BitPool.cpp \
             src/drivers/DirectGPIODriver.cpp \
             src/drivers/ShiftRegisterDriver.cpp \
             src/drivers/MCP23017Driver.cpp \
             src/drivers/TLC59711Driver.cpp \
             -o test_xpoint
 
+      - name: Build custom test binary
+        run: |
+          g++ -std=c++11 -Wall -Wextra -Wpedantic -Isrc -Itest \
+            test/test_custom.cpp \
+            src/XPoint.cpp \
+            src/drivers/BitPool.cpp \
+            src/drivers/DirectGPIODriver.cpp \
+            src/drivers/ShiftRegisterDriver.cpp \
+            src/drivers/MCP23017Driver.cpp \
+            src/drivers/TLC59711Driver.cpp \
+            -o test_custom
+
       - name: Run unit tests
         run: ./test_xpoint
 
       - name: Custom tests — 4×4 non-latching
-        run: ./test_xpoint --custom --rows=4 --cols=4
+        run: ./test_custom --rows=4 --cols=4
 
       - name: Custom tests — 8×8 latching pulse=20ms
-        run: ./test_xpoint --custom --rows=8 --cols=8 --latching --pulse=20
+        run: ./test_custom --rows=8 --cols=8 --latching --pulse=20
 
       - name: Custom tests — 1×16 latching pulse=50ms
-        run: ./test_xpoint --custom --rows=1 --cols=16 --latching --pulse=50
+        run: ./test_custom --rows=1 --cols=16 --latching --pulse=50

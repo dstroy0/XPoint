@@ -1,0 +1,27 @@
+[
+  {
+    "desc": "interlock desync: after disconnect() clears state, RESET pulse still in-flight; interlocked row must be blocked until releaseNode fires",
+    "type": "interlock",
+    "rows": 4,
+    "cols": 4,
+    "pulse_ms": 50,
+    "lock_rowA": 0,
+    "lock_rowB": 1,
+    "hold_r": 0,
+    "hold_c": 0,
+    "blocked_r": 1,
+    "blocked_c": 0
+  },
+  {
+    "desc": "exclusive desync: after disconnect() clears state, RESET pulse still in-flight; other row connecting to same exclusive col must be blocked",
+    "type": "exclusive",
+    "rows": 4,
+    "cols": 4,
+    "pulse_ms": 50,
+    "exclusive_col": 0,
+    "hold_r": 0,
+    "hold_c": 0,
+    "blocked_r": 1,
+    "blocked_c": 0
+  }
+]

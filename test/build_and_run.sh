@@ -1,28 +1,52 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build, run tests, and write a report (Linux/macOS)
+# Build, run tests, write TEST_REPORT.md, and open it (Linux/macOS)
 ROOTDIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOTDIR/test_xpoint"
-REPORT="$ROOTDIR/report.txt"
+OUT_CUSTOM="$ROOTDIR/test_custom"
+REPORT="$ROOTDIR/test/TEST_REPORT.md"
 
-echo "Building host tests..." | tee "$REPORT"
-g++ -std=c++11 -Isrc -Itest \
-    test/test_xpoint.cpp \
-    src/XPoint.cpp \
-    src/drivers/ShiftRegisterDriver.cpp \
-    src/drivers/DirectGPIODriver.cpp \
-    src/drivers/MCP23017Driver.cpp \
-    src/drivers/TLC59711Driver.cpp \
-    -o "$OUT" 2>&1 | tee -a "$REPORT"
-BUILD_EXIT=${PIPESTATUS[0]}
-if [ $BUILD_EXIT -ne 0 ]; then
-    echo "Build failed with exit $BUILD_EXIT" | tee -a "$REPORT"
-    exit $BUILD_EXIT
+SRCS="$ROOTDIR/src/XPoint.cpp
+$ROOTDIR/src/drivers/BitPool.cpp
+$ROOTDIR/src/drivers/ShiftRegisterDriver.cpp
+$ROOTDIR/src/drivers/DirectGPIODriver.cpp
+$ROOTDIR/src/drivers/MCP23017Driver.cpp
+$ROOTDIR/src/drivers/TLC59711Driver.cpp"
+
+echo "Building host tests..."
+g++ -std=c++11 -Wall -Wextra -Wpedantic \
+    -I"$ROOTDIR/src" -I"$ROOTDIR/test" \
+    "$ROOTDIR/test/test_xpoint.cpp" \
+    $SRCS \
+    -o "$OUT"
+
+echo "Building custom test binary..."
+g++ -std=c++11 -Wall -Wextra -Wpedantic \
+    -I"$ROOTDIR/src" -I"$ROOTDIR/test" \
+    "$ROOTDIR/test/test_custom.cpp" \
+    $SRCS \
+    -o "$OUT_CUSTOM"
+
+echo "Running unit tests..."
+"$OUT" "$@"          # forward any --skip-* flags
+UNIT_EXIT=$?
+
+if [ $UNIT_EXIT -ne 0 ]; then
+    echo "Unit tests failed (exit $UNIT_EXIT)"
+    exit $UNIT_EXIT
 fi
 
-echo "Running tests..." | tee -a "$REPORT"
-"$OUT" 2>&1 | tee -a "$REPORT"
-TEST_EXIT=${PIPESTATUS[0]}
-echo "TEST EXIT CODE: $TEST_EXIT" | tee -a "$REPORT"
-exit $TEST_EXIT
+echo "Running custom tests..."
+"$OUT_CUSTOM" --rows=4  --cols=4
+"$OUT_CUSTOM" --rows=8  --cols=8  --latching --pulse=20
+"$OUT_CUSTOM" --rows=1  --cols=16 --latching --pulse=50
+
+# Open TEST_REPORT.md in the default viewer
+if command -v xdg-open &>/dev/null; then
+    xdg-open "$REPORT"
+elif command -v open &>/dev/null; then
+    open "$REPORT"
+else
+    echo "Report written to: $REPORT"
+fi

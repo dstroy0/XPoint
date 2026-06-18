@@ -5,18 +5,19 @@ All notable changes to XPoint are documented here.
 ## [Unreleased]
 
 ### Bug Fixes
+
 - fix arduino ci ([`6660d6e`](https://github.com/dstroy0/XPoint/commit/6660d6e9edbc04ca17d302bc3865aa1e24a311fc))
 - fix param typing ([`bcd3a33`](https://github.com/dstroy0/XPoint/commit/bcd3a3318fb3437a6e7159df33a26b244c87caca))
 
-
 ### CI / Build
+
 - update CHANGELOG.md [skip ci] ([`591b8e4`](https://github.com/dstroy0/XPoint/commit/591b8e4203bf663fd2c9e78123bbe2330211a07f))
 - update CHANGELOG.md [skip ci] ([`3b81e95`](https://github.com/dstroy0/XPoint/commit/3b81e9522c1a9c4d6f9f3f1b79734585260e4019))
 - update CHANGELOG.md [skip ci] ([`f9ab97c`](https://github.com/dstroy0/XPoint/commit/f9ab97c747319e68f84dde7859e4d0a8e3a8f315))
 - update CHANGELOG.md [skip ci] ([`8a2af58`](https://github.com/dstroy0/XPoint/commit/8a2af585dc61c35ec41864537051e4e498bac915))
 
-
 ### Changes
+
 - Merge branch 'main' of https://github.com/dstroy0/XPoint ([`6117563`](https://github.com/dstroy0/XPoint/commit/611756335d2815b4b838a904b30df7004e2dea92))
 - comments, spelling, move drivers into src/drivers ([`288c788`](https://github.com/dstroy0/XPoint/commit/288c788db7230db77a4d9d1c6a9a0848a3ff4c6c))
 - Merge branch 'main' of https://github.com/dstroy0/XPoint ([`15e9ee8`](https://github.com/dstroy0/XPoint/commit/15e9ee887a9dd532c5ffd06d73ee1c0d92fc281c))
@@ -35,6 +36,3 @@ All notable changes to XPoint are documented here.
 - portability, docs ([`9c45928`](https://github.com/dstroy0/XPoint/commit/9c45928990ea64f66c7ea20e0f7d3b41f3d52537))
 - remove pip cache ([`ab2d4c2`](https://github.com/dstroy0/XPoint/commit/ab2d4c20861d62aeae341b22c6d49cd7519b8337))
 - initial commit ([`b9bf057`](https://github.com/dstroy0/XPoint/commit/b9bf05702c061591fa9012e215d6b68bb484d4db))
-
-
-

@@ -12,30 +12,29 @@
  * - Dual-coil latching relays: non-blocking SET/RESET coil pulse management
  * - Row interlock: prevent two rows from connecting to the same column
  * - Exclusive-input columns: only one row permitted at a time
- * - analog level control via setLevel() for PWM-capable drivers
+ * - Analog level control via setLevel() for PWM-capable drivers
  *
- * **Flat array layout** (all indices zero-based):
- * | Array    | Size             | Meaning                             |
- * |----------|------------------|-------------------------------------|
- * | `_state` | rows × cols      | Connection flag per node            |
- * | `_ilock` | rows × rows      | Symmetric row-pair interlock flags  |
- * | `_excl`  | cols             | Exclusive-input column flags        |
+ * **Bit-pool layout** — three sections packed into one flat uint32_t array
+ * managed by a BitPool instance:
+ *
+ * | Section | Bit offset              | Bit count   |
+ * |---------|-------------------------|-------------|
+ * | state   | 0                       | rows × cols |
+ * | ilock   | rows × cols             | rows × rows |
+ * | excl    | rows × cols + rows²     | cols        |
+ *
+ * Total words = ceil((rows×cols + rows² + cols) / 32).
+ * For an 8×8 matrix: 64 + 64 + 8 = 136 bits → 5 uint32_t (vs 136 bool bytes).
  *
  * **Construction options:**
  * | Constructor        | Heap use | Typical target               |
  * |--------------------|----------|------------------------------|
  * | Heap constructor   | Yes      | Desktop / large MCU          |
- * | Buffer constructor | No       | Caller manages static arrays |
+ * | Pool constructor   | No       | Caller manages pool buffer   |
  * | XPointStatic<R,C>  | No       | AVR global / BSS             |
- *
- * **RAM cost per instance:**
- * - Object overhead: ~71 B on AVR (8-bit, 2-byte ptrs), ~152 B on 64-bit.
- * - State buffers: `rows*cols + rows² + cols` bytes.
  *
  * **Latching relay pulse table:**
  * - `MAX_PULSES = 8` simultaneous in-flight coil pulses.
- * - Operations beyond this limit silently drop the pulse event.
- * - Do not issue more than 8 connect/disconnect calls before calling update().
  * - connect() / disconnect() return `false` while a pulse is in-flight for
  *   the target node; call update() in each loop() iteration to clear slots.
  */
@@ -43,34 +42,31 @@
 #ifndef XPOINT_H
 #define XPOINT_H
 
+#include "drivers/BitPool.h"
 #include "drivers/XPointDriver.h"
 #include <stdint.h>
-#include <string.h>
 
 /**
  * @brief Relay operating mode.
- *
- * Passed to the XPoint / XPointStatic constructor to select coil behavior.
  */
 enum RelayType
 {
-    RE_NON_LATCHING = 0,  ///< energize to connect; de-energize to disconnect.
+    RE_NON_LATCHING = 0,  ///< Energize to connect; de-energize to disconnect.
     RE_LATCHING_DUAL_COIL ///< SET coil to connect; RESET coil to disconnect.
 };
 
 /**
  * @brief Internal pulse-event slot for non-blocking latching-relay coil timing.
  *
- * One slot is occupied from the moment a coil is energized until update()
- * detects that @p pulseDuration ms have elapsed and calls releaseNode().
- * Managed exclusively by XPoint; not part of the public API.
+ * @note t0 is uint32_t to enforce 32-bit timer semantics and correct rollover
+ *       on all targets including 64-bit hosts.
  */
-struct PulseEvent
+struct XPOINT_PACKED PulseEvent
 {
-    uint8_t r;        ///< Matrix row.
-    uint8_t c;        ///< Matrix column.
-    unsigned long t0; ///< millis() at coil energize.
-    bool on;          ///< `true` = slot occupied.
+    uint8_t r;   ///< Matrix row.
+    uint8_t c;   ///< Matrix column.
+    uint32_t t0; ///< millis() at coil energize; wraps at ~49 days.
+    bool on;     ///< true = slot occupied.
 };
 
 /**
@@ -84,164 +80,141 @@ class XPoint
     /**
      * @brief Heap-allocating constructor.
      *
-     * Allocates `rows*cols + rows² + cols` bytes via `new[]`; freed in the
-     * destructor.  Avoid on AVR with limited SRAM; prefer XPointStatic or the
-     * buffer constructor to eliminate heap use and fragmentation risk.
+     * Allocates one BitPool large enough for state, ilock, and excl sections;
+     * freed in the destructor.
      *
      * @param[in] rows Number of matrix rows (1–255).
      * @param[in] cols Number of matrix columns (1–255).
-     * @param[in] type Relay operating mode (default RE_NON_LATCHING).
-     * @param[in] pdur Coil pulse duration in ms for RE_LATCHING_DUAL_COIL (default 0).
+     * @param[in] type Relay operating mode.
+     * @param[in] pdur Coil pulse duration in ms (RE_LATCHING_DUAL_COIL only).
      */
     XPoint(uint8_t rows, uint8_t cols, RelayType type = RE_NON_LATCHING, uint16_t pdur = 0);
 
     /**
-     * @brief Zero-heap buffer constructor.
+     * @brief Zero-heap pool constructor.
      *
-     * All three arrays must be sized as specified and must outlive this object.
-     * The destructor does **not** free them.
+     * @p pool must point to at least poolWords(rows, cols) uint32_t elements
+     * and must outlive this object.  The destructor does not free it.
      *
-     * @param[in] rows  Number of matrix rows.
-     * @param[in] cols  Number of matrix columns.
-     * @param[in] state Caller-owned array of `rows * cols` bools.
-     * @param[in] ilock Caller-owned array of `rows * rows` bools (symmetric interlock map).
-     * @param[in] excl  Caller-owned array of `cols` bools (exclusive-input flags).
-     * @param[in] type  Relay operating mode.
-     * @param[in] pdur  Coil pulse duration in ms.
+     * @param[in] rows Number of matrix rows.
+     * @param[in] cols Number of matrix columns.
+     * @param[in] pool Caller-owned word array; use poolWords() to size it.
+     * @param[in] type Relay operating mode.
+     * @param[in] pdur Coil pulse duration in ms.
      */
-    XPoint(uint8_t rows, uint8_t cols, bool *state, bool *ilock, bool *excl, RelayType type = RE_NON_LATCHING,
-           uint16_t pdur = 0);
+    XPoint(uint8_t rows, uint8_t cols, uint32_t *pool, RelayType type = RE_NON_LATCHING, uint16_t pdur = 0);
 
-    /** @brief Destructor. Frees heap buffers only when constructed with the heap constructor. */
+    /** @brief Destructor. Frees pool only when built with the heap constructor. */
     ~XPoint();
 
     XPoint(const XPoint &) = delete;
     XPoint &operator=(const XPoint &) = delete;
 
     /**
-     * @brief Attach a driver backend.
+     * @brief Number of uint32_t words needed for a pool of the given dimensions.
      *
-     * Must be called before begin().  XPoint does **not** take ownership of @p drv.
+     * Use this to size the array passed to the pool constructor or XPointStatic.
      *
-     * @param[in] drv Pointer to a concrete XPointDriver implementation.
+     * @param[in] rows Row count.
+     * @param[in] cols Column count.
+     * @return Word count, or 0 for degenerate (0-dim) matrices.
      */
+    static uint16_t poolWords(uint8_t rows, uint8_t cols)
+    {
+        return BitPool::wordsFor((uint32_t)rows * cols + (uint32_t)rows * rows + cols);
+    }
+
+    /** @brief Attach a driver backend. Must be called before begin(). */
     void setDriver(XPointDriver *drv);
 
-    /**
-     * @brief Initialize hardware by calling `drv->begin()`.
-     *
-     * Call once after setDriver() and before any connect / disconnect calls.
-     */
+    /** @brief Initialize hardware via drv->begin(). Call once after setDriver(). */
     void begin();
 
     /**
-     * @brief Connect row @p row to column @p col.
+     * @brief Connect row to column.
      *
-     * Applies interlock and exclusive-input rules before connecting.
-     * For RE_LATCHING_DUAL_COIL, returns `false` while a coil pulse is
-     * in-flight for this node — call update() each loop() to free pulse slots.
+     * Applies interlock and exclusive-input rules.  For RE_LATCHING_DUAL_COIL
+     * returns false while a coil pulse is in-flight for this node.
      *
-     * @param[in] row Row index (zero-based).
-     * @param[in] col Column index (zero-based).
-     * @return `true`  — node is now connected (or was already connected).
-     * @return `false` — out of range, blocked by interlock / exclusive rule,
-     *                   or a latching-relay pulse is still in-flight.
+     * @return true if connected (or was already connected), false if blocked.
      */
     bool connect(uint8_t row, uint8_t col);
 
     /**
-     * @brief Disconnect row @p row from column @p col.
+     * @brief Disconnect row from column.
      *
-     * For RE_LATCHING_DUAL_COIL, returns `false` while a coil pulse is
-     * in-flight for this node — call update() each loop() to free pulse slots.
+     * For RE_LATCHING_DUAL_COIL returns false while a coil pulse is in-flight.
      *
-     * @param[in] row Row index.
-     * @param[in] col Column index.
-     * @return `true`  — node is now disconnected (or was already disconnected).
-     * @return `false` — out of range, or a latching-relay pulse is still in-flight.
+     * @return true if disconnected (or was already disconnected), false if blocked.
      */
     bool disconnect(uint8_t row, uint8_t col);
 
     /**
-     * @brief analog-level connect / disconnect (PWM drivers).
+     * @brief Analog-level connect / disconnect for PWM drivers.
      *
-     * - `level > 0`: connecting path — interlock and exclusive-input rules apply.
-     * - `level == 0`: disconnecting path — rules are not checked.
+     * level > 0: connecting path — interlock and exclusive rules apply.
+     * level == 0: disconnecting path — rules are bypassed.
      *
-     * The default setNodeLevel() delegates to setNodeHardware(), so binary
-     * drivers treat any non-zero level as "on" and `0` as "off".
-     * PWM-capable drivers (TLC59711) use the full 16-bit range.
-     *
-     * @param[in] row   Row index.
-     * @param[in] col   Column index.
-     * @param[in] level Drive level `0x0000` (off) to `0xFFFF` (full on).
-     * @return `true` on success, `false` if blocked or out of range.
+     * @return true on success, false if blocked or out of range.
      */
     bool setLevel(uint8_t row, uint8_t col, uint16_t level);
 
     /**
-     * @brief Disconnect all connected nodes and zero the state table.
+     * @brief Disconnect all nodes, zeroing the state section of the pool.
      *
-     * For RE_LATCHING_DUAL_COIL, pulses the RESET coil on each connected node
-     * and registers pulse events (up to MAX_PULSES; excess nodes are silently
-     * skipped — their hardware timeout must de-energize any excess coils).
-     * Any stale in-flight SET-coil pulses are cancelled before registering the
-     * RESET pulses so freed slots remain available.
+     * For RE_LATCHING_DUAL_COIL pulses the RESET coil on each connected node.
+     * In-flight SET pulses are cancelled before registering RESET pulses so
+     * freed slots remain available. Nodes beyond MAX_PULSES are silently skipped.
      */
     void clearAll();
 
     /**
-     * @brief Prevent rowA and rowB from connecting to the same column simultaneously.
+     * @brief Prevent rowA and rowB from sharing a column simultaneously.
      *
-     * The interlock is symmetric; calling `lockRows(0,1)` and `lockRows(1,0)`
-     * are equivalent.  Safe to call multiple times.
-     *
-     * @param[in] rowA First row index.
-     * @param[in] rowB Second row index.
+     * Symmetric; lockRows(0,1) and lockRows(1,0) are equivalent.
      */
     void lockRows(uint8_t rowA, uint8_t rowB);
 
-    /**
-     * @brief Mark column @p col as exclusive: at most one row may connect at a time.
-     *
-     * @param[in] col Column index.
-     */
+    /** @brief Mark column col as exclusive: at most one row may connect at a time. */
     void exclusiveInput(uint8_t col);
 
     /**
      * @brief Expire latching-relay coil pulses and call releaseNode() as needed.
      *
-     * Must be called every `loop()` iteration when using RE_LATCHING_DUAL_COIL.
-     * Returns immediately (no overhead) for RE_NON_LATCHING matrices.
-     * Calls `commitPhysicalUpdates()` once if any pulses were released.
+     * Must be called every loop() iteration when using RE_LATCHING_DUAL_COIL.
+     * No-op for RE_NON_LATCHING matrices.
      */
     void update();
 
   private:
-    uint8_t _rows;      ///< Row count.
-    uint8_t _cols;      ///< Column count.
-    RelayType _type;    ///< Relay operating mode.
-    uint16_t _pdur;     ///< Coil pulse duration in ms (RE_LATCHING_DUAL_COIL only).
-    XPointDriver *_drv; ///< Attached driver backend.
-    bool _owns;         ///< `true` = destructor frees _state, _ilock, _excl.
+    uint8_t _rows;
+    uint8_t _cols;
+    RelayType _type;
+    uint16_t _pdur;
+    XPointDriver *_drv;
+    BitPool _pool; ///< Flat bit pool: [state | ilock | excl].
 
-    bool *_state; ///< [_rows * _cols]  Logical connection table.
-    bool *_ilock; ///< [_rows * _rows]  Row-pair interlock flags (symmetric).
-    bool *_excl;  ///< [_cols]          Exclusive-input column flags.
+    static const uint8_t MAX_PULSES = 8;
+    PulseEvent _pulses[MAX_PULSES];
 
-    static const uint8_t MAX_PULSES = 8; ///< Maximum simultaneous in-flight pulses.
-    PulseEvent _pulses[MAX_PULSES];      ///< Pulse event table.
+    /* Section offsets — computed from _rows/_cols, never stored. */
+    uint32_t _ilockOff() const
+    {
+        return (uint32_t)_rows * _cols;
+    }
+    uint32_t _exclOff() const
+    {
+        return (uint32_t)_rows * _cols + (uint32_t)_rows * _rows;
+    }
 
-    /** @brief Zero buffers and pulse table; called by both constructors. */
     void _init();
+    bool _pulsePending(uint8_t row, uint8_t col) const;
 };
 
 /**
- * @brief Zero-heap variant of XPoint with embedded state arrays.
+ * @brief Zero-heap XPoint with a compile-time-sized embedded bit pool.
  *
- * All three state arrays are embedded directly inside the object so no heap
- * allocation ever occurs.  Declare as a global or `static` local on AVR to
- * keep everything in BSS / data segment.
+ * Declare as a global or static local to keep everything in BSS/data.
  *
  * @code
  * XPointStatic<4, 4> matrix(RE_NON_LATCHING);
@@ -249,22 +222,21 @@ class XPoint
  * matrix.begin();
  * @endcode
  *
- * @tparam ROWS Number of matrix rows (compile-time constant).
- * @tparam COLS Number of matrix columns (compile-time constant).
+ * @tparam ROWS Row count (compile-time constant, 1–255).
+ * @tparam COLS Column count (compile-time constant, 1–255).
  */
 template <uint8_t ROWS, uint8_t COLS> class XPointStatic : public XPoint
 {
-    bool _stateBuf[ROWS * COLS]; ///< Embedded connection state [ROWS * COLS].
-    bool _ilockBuf[ROWS * ROWS]; ///< Embedded interlock map    [ROWS * ROWS].
-    bool _exclBuf[COLS];         ///< Embedded exclusive flags  [COLS].
+    static const uint16_t WORDS = (uint16_t)(((uint32_t)ROWS * COLS + (uint32_t)ROWS * ROWS + COLS + 31u) / 32u);
+
+    uint32_t _buf[WORDS > 0u ? WORDS : 1u];
 
   public:
     /**
      * @param[in] type Relay operating mode (default RE_NON_LATCHING).
      * @param[in] pdur Coil pulse duration in ms (default 0).
      */
-    XPointStatic(RelayType type = RE_NON_LATCHING, uint16_t pdur = 0)
-        : XPoint(ROWS, COLS, _stateBuf, _ilockBuf, _exclBuf, type, pdur)
+    XPointStatic(RelayType type = RE_NON_LATCHING, uint16_t pdur = 0) : XPoint(ROWS, COLS, _buf, type, pdur)
     {
     }
 };

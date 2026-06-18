@@ -1,0 +1,37 @@
+[
+  {
+    "description": "4x4 non-latching",
+    "rows": 4,
+    "cols": 4,
+    "latching": false,
+    "pulse_ms": 0
+  },
+  {
+    "description": "8x8 latching pulse=20ms",
+    "rows": 8,
+    "cols": 8,
+    "latching": true,
+    "pulse_ms": 20
+  },
+  {
+    "description": "1x16 latching pulse=50ms",
+    "rows": 1,
+    "cols": 16,
+    "latching": true,
+    "pulse_ms": 50
+  },
+  {
+    "description": "2x8 non-latching (minimal I2C expander)",
+    "rows": 2,
+    "cols": 8,
+    "latching": false,
+    "pulse_ms": 0
+  },
+  {
+    "description": "16x16 non-latching (large matrix)",
+    "rows": 16,
+    "cols": 16,
+    "latching": false,
+    "pulse_ms": 0
+  }
+]

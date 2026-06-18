@@ -1,0 +1,35 @@
+[
+  {
+    "desc": "connect: 8 nodes fill all pulse slots; 9th connect must return false (no stuck SET coil)",
+    "rows": 4,
+    "cols": 4,
+    "pulse_ms": 50,
+    "test": "connect_overflow",
+    "fill_r": [0, 0, 0, 0, 1, 1, 1, 1],
+    "fill_c": [0, 1, 2, 3, 0, 1, 2, 3],
+    "overflow_r": 2,
+    "overflow_c": 0
+  },
+  {
+    "desc": "disconnect: 1 connected node + 8 in-flight slots; disconnect must return false (no stuck RESET coil)",
+    "rows": 4,
+    "cols": 4,
+    "pulse_ms": 50,
+    "test": "disconnect_overflow",
+    "hold_r": 0,
+    "hold_c": 0,
+    "fill_r": [0, 0, 0, 1, 1, 1, 1, 2],
+    "fill_c": [1, 2, 3, 0, 1, 2, 3, 0]
+  },
+  {
+    "desc": "clearAll: 9 connected nodes with 0 in-flight slots; only 8 get RESET coil (slot constraint)",
+    "rows": 4,
+    "cols": 4,
+    "pulse_ms": 50,
+    "test": "clearall_overflow",
+    "connect_r": [0, 0, 0, 0, 1, 1, 1, 1, 2],
+    "connect_c": [0, 1, 2, 3, 0, 1, 2, 3, 0],
+    "skipped_r": 2,
+    "skipped_c": 0
+  }
+]

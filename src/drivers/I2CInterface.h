@@ -49,6 +49,25 @@ class I2CInterface
      * @param[in] val  Byte value to write.
      */
     virtual void writeRegister(uint8_t addr, uint8_t reg, uint8_t val) = 0;
+
+    /**
+     * @brief Write a single data byte to a device (no register address byte).
+     *
+     * Used by bus-multiplexer adapters such as TCA9548AInterface whose
+     * protocol is a bare one-byte control word with no register field.
+     *
+     * Default: calls writeRegister(addr, data, 0u). Devices that ignore
+     * trailing bytes (TCA9548A latches only the first data byte) work
+     * correctly with this default. WireI2C overrides to emit exactly one
+     * data byte on the wire.
+     *
+     * @param[in] addr 7-bit I2C device address.
+     * @param[in] data Control byte to write.
+     */
+    virtual void writeByte(uint8_t addr, uint8_t data)
+    {
+        writeRegister(addr, data, 0u);
+    }
 };
 
 #endif // I2C_INTERFACE_H

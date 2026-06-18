@@ -19,13 +19,24 @@ void WireI2C::writeRegister(uint8_t addr, uint8_t reg, uint8_t val)
     Wire.endTransmission();
 }
 
-#else // host build - no-ops
+void WireI2C::writeByte(uint8_t addr, uint8_t data)
+{
+    Wire.beginTransmission(addr);
+    Wire.write(data);
+    Wire.endTransmission();
+}
+
+#else // host build — no-ops (tests use MockI2C, not WireI2C)
 
 void WireI2C::begin()
 {
 }
 
 void WireI2C::writeRegister(uint8_t /*addr*/, uint8_t /*reg*/, uint8_t /*val*/)
+{
+}
+
+void WireI2C::writeByte(uint8_t /*addr*/, uint8_t /*data*/)
 {
 }
 

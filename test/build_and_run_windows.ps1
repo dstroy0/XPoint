@@ -1,17 +1,41 @@
-# Build and run tests on Windows (PowerShell)
+# Build, run tests, write TEST_REPORT.md, and open it (Windows PowerShell)
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Root = Join-Path $ScriptDir ".."
-$Out = Join-Path $Root "test_xpoint.exe"
-$Report = Join-Path $Root "report.txt"
+$Root      = Join-Path $ScriptDir ".."
+$Out       = Join-Path $Root "test_xpoint.exe"
+$OutCustom = Join-Path $Root "test_custom.exe"
+$Report    = Join-Path $ScriptDir "TEST_REPORT.md"
 
-Write-Output "Building host tests..." | Tee-Object -FilePath $Report
-$cmd = "g++ -std=c++11 -Isrc -Itest test/test_xpoint.cpp src/XPoint.cpp src/drivers/ShiftRegisterDriver.cpp src/drivers/DirectGPIODriver.cpp src/drivers/MCP23017Driver.cpp src/drivers/TLC59711Driver.cpp -o `"$Out`""
-Write-Output $cmd | Tee-Object -FilePath $Report -Append
-Invoke-Expression $cmd 2>&1 | Tee-Object -FilePath $Report -Append
-if ($LASTEXITCODE -ne 0) { Write-Output "Build failed with exit $LASTEXITCODE" | Tee-Object -FilePath $Report -Append; exit $LASTEXITCODE }
+$Srcs = @(
+    "src/XPoint.cpp",
+    "src/drivers/BitPool.cpp",
+    "src/drivers/ShiftRegisterDriver.cpp",
+    "src/drivers/DirectGPIODriver.cpp",
+    "src/drivers/MCP23017Driver.cpp",
+    "src/drivers/TLC59711Driver.cpp"
+)
 
-Write-Output "Running tests..." | Tee-Object -FilePath $Report -Append
-& $Out 2>&1 | Tee-Object -FilePath $Report -Append
-$exitCode = $LASTEXITCODE
-Write-Output "TEST EXIT CODE: $exitCode" | Tee-Object -FilePath $Report -Append
-exit $exitCode
+Write-Host "Building host tests..."
+$cmd = "g++ -std=c++11 -Wall -Wextra -Wpedantic -Isrc -Itest test/test_xpoint.cpp " + ($Srcs -join " ") + " -o `"$Out`""
+Invoke-Expression $cmd 2>&1
+if ($LASTEXITCODE -ne 0) { Write-Error "Build failed"; exit $LASTEXITCODE }
+
+Write-Host "Building custom test binary..."
+$cmd2 = "g++ -std=c++11 -Wall -Wextra -Wpedantic -Isrc -Itest test/test_custom.cpp " + ($Srcs -join " ") + " -o `"$OutCustom`""
+Invoke-Expression $cmd2 2>&1
+if ($LASTEXITCODE -ne 0) { Write-Error "Custom build failed"; exit $LASTEXITCODE }
+
+Write-Host "Running unit tests..."
+# Forward any extra args (e.g. --skip-range) directly to the binary.
+# The binary writes TEST_REPORT.md and also prints to stdout.
+& $Out @args
+$unitExit = $LASTEXITCODE
+
+if ($unitExit -ne 0) { Write-Error "Unit tests failed (exit $unitExit)"; exit $unitExit }
+
+Write-Host "Running custom tests..."
+& $OutCustom --rows=4  --cols=4
+& $OutCustom --rows=8  --cols=8  --latching --pulse=20
+& $OutCustom --rows=1  --cols=16 --latching --pulse=50
+
+Write-Host "Opening $Report ..."
+Invoke-Item $Report

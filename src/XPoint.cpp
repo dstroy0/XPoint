@@ -6,8 +6,16 @@
 
 #if defined(ARDUINO)
 #include <Arduino.h>
+static inline uint32_t _millis()
+{
+    return (uint32_t)millis();
+}
 #else
-extern unsigned long millis();
+extern uint32_t millis();
+static inline uint32_t _millis()
+{
+    return millis();
+}
 #endif
 
 /* --------------------------------------------------------------------------
@@ -15,47 +23,40 @@ extern unsigned long millis();
  * -------------------------------------------------------------------------- */
 
 XPoint::XPoint(uint8_t rows, uint8_t cols, RelayType type, uint16_t pdur)
-    : _rows(rows), _cols(cols), _type(type), _pdur(pdur), _drv(nullptr), _owns(true), _state(nullptr), _ilock(nullptr),
-      _excl(nullptr)
+    : _rows(rows), _cols(cols), _type(type), _pdur(pdur), _drv(nullptr),
+      _pool((uint32_t)rows * cols + (uint32_t)rows * rows + cols)
 {
-    if (rows == 0 || cols == 0)
-        return;
-    _state = new bool[(size_t)rows * cols];
-    _ilock = new bool[(size_t)rows * rows];
-    _excl = new bool[cols];
     _init();
 }
 
-XPoint::XPoint(uint8_t rows, uint8_t cols, bool *state, bool *ilock, bool *excl, RelayType type, uint16_t pdur)
-    : _rows(rows), _cols(cols), _type(type), _pdur(pdur), _drv(nullptr), _owns(false), _state(state), _ilock(ilock),
-      _excl(excl)
+XPoint::XPoint(uint8_t rows, uint8_t cols, uint32_t *pool, RelayType type, uint16_t pdur)
+    : _rows(rows), _cols(cols), _type(type), _pdur(pdur), _drv(nullptr),
+      _pool(pool, (uint32_t)rows * cols + (uint32_t)rows * rows + cols)
 {
     _init();
 }
 
 XPoint::~XPoint()
 {
-    if (_owns)
-    {
-        delete[] _state;
-        delete[] _ilock;
-        delete[] _excl;
-    }
 }
 
-/* Zero all buffers and clear the pulse table.
- * Called by both constructors after pointers are set. */
 void XPoint::_init()
 {
-    if (_state)
-        memset(_state, 0, (size_t)_rows * _cols * sizeof(bool));
-    if (_ilock)
-        memset(_ilock, 0, (size_t)_rows * _rows * sizeof(bool));
-    if (_excl)
-        memset(_excl, 0, (size_t)_cols * sizeof(bool));
-
+    _pool.clear();
     for (uint8_t i = 0; i < MAX_PULSES; ++i)
-        _pulses[i] = {0, 0, 0UL, false};
+        _pulses[i] = {0, 0, 0u, false};
+}
+
+/* --------------------------------------------------------------------------
+ * Private helpers
+ * -------------------------------------------------------------------------- */
+
+bool XPoint::_pulsePending(uint8_t row, uint8_t col) const
+{
+    for (uint8_t i = 0; i < MAX_PULSES; ++i)
+        if (_pulses[i].on && _pulses[i].r == row && _pulses[i].c == col)
+            return true;
+    return false;
 }
 
 /* --------------------------------------------------------------------------
@@ -79,56 +80,64 @@ void XPoint::begin()
 
 bool XPoint::connect(uint8_t row, uint8_t col)
 {
-    if (!_state || row >= _rows || col >= _cols)
+    if (!_pool.valid() || row >= _rows || col >= _cols)
         return false;
 
-    /* Interlock: refuse if any peer locked against this row already holds col. */
+    uint32_t ibase = _ilockOff();
+    uint32_t ebase = _exclOff();
+
     for (uint8_t r = 0; r < _rows; ++r)
     {
         if (r == row)
             continue;
-        if (_ilock[row * _rows + r] && _state[r * _cols + col])
+        if (_pool.get(ibase + (uint32_t)row * _rows + r) &&
+            (_pool.get((uint32_t)r * _cols + col) || _pulsePending(r, col)))
             return false;
     }
 
-    /* Exclusive column: refuse if any other row already holds this column. */
-    if (_excl[col])
+    if (_pool.get(ebase + col))
     {
         for (uint8_t r = 0; r < _rows; ++r)
-            if (r != row && _state[r * _cols + col])
+            if (r != row && (_pool.get((uint32_t)r * _cols + col) || _pulsePending(r, col)))
                 return false;
     }
 
-    if (_state[row * _cols + col])
-        return true; // already connected - idempotent
-
-    /* Latching: refuse if a coil pulse is still in-flight for this node.
-     * Caller must wait until update() fires releaseNode() before re-trying. */
-    if (_type == RE_LATCHING_DUAL_COIL)
-    {
-        for (uint8_t i = 0; i < MAX_PULSES; ++i)
-            if (_pulses[i].on && _pulses[i].r == row && _pulses[i].c == col)
-                return false;
-    }
-
-    _state[row * _cols + col] = true;
-
-    if (_drv)
-    {
-        _drv->setNodeHardware(row, col, true); // true = energize / SET coil
-        _drv->commitPhysicalUpdates();
-    }
+    if (_pool.get((uint32_t)row * _cols + col))
+        return true; // already connected
 
     if (_type == RE_LATCHING_DUAL_COIL)
     {
-        unsigned long now = millis();
+        uint8_t freeSlot = MAX_PULSES;
         for (uint8_t i = 0; i < MAX_PULSES; ++i)
         {
-            if (!_pulses[i].on)
+            if (_pulses[i].on)
             {
-                _pulses[i] = {row, col, now, true};
-                break;
+                if (_pulses[i].r == row && _pulses[i].c == col)
+                    return false;
             }
+            else if (freeSlot == MAX_PULSES)
+            {
+                freeSlot = i;
+            }
+        }
+        if (freeSlot == MAX_PULSES)
+            return false;
+
+        _pool.set((uint32_t)row * _cols + col, true);
+        if (_drv)
+        {
+            _drv->setNodeHardware(row, col, true);
+            _drv->commitPhysicalUpdates();
+        }
+        _pulses[freeSlot] = {row, col, _millis(), true};
+    }
+    else
+    {
+        _pool.set((uint32_t)row * _cols + col, true);
+        if (_drv)
+        {
+            _drv->setNodeHardware(row, col, true);
+            _drv->commitPhysicalUpdates();
         }
     }
     return true;
@@ -136,41 +145,43 @@ bool XPoint::connect(uint8_t row, uint8_t col)
 
 bool XPoint::disconnect(uint8_t row, uint8_t col)
 {
-    if (!_state || row >= _rows || col >= _cols)
+    if (!_pool.valid() || row >= _rows || col >= _cols)
         return false;
-    if (!_state[row * _cols + col])
-        return true; // already disconnected - idempotent
 
-    /* Latching: refuse if a coil pulse is still in-flight for this node.
-     * Caller must wait until update() fires releaseNode() before re-trying. */
-    if (_type == RE_LATCHING_DUAL_COIL)
-    {
-        for (uint8_t i = 0; i < MAX_PULSES; ++i)
-            if (_pulses[i].on && _pulses[i].r == row && _pulses[i].c == col)
-                return false;
-    }
+    uint32_t bit = (uint32_t)row * _cols + col;
 
-    _state[row * _cols + col] = false;
+    if (!_pool.get(bit))
+        return true; // already disconnected
 
     if (_type == RE_LATCHING_DUAL_COIL)
     {
-        if (_drv)
-        {
-            _drv->setNodeHardware(row, col, false); // false = energize RESET coil
-            _drv->commitPhysicalUpdates();
-        }
-        unsigned long now = millis();
+        uint8_t freeSlot = MAX_PULSES;
         for (uint8_t i = 0; i < MAX_PULSES; ++i)
         {
-            if (!_pulses[i].on)
+            if (_pulses[i].on)
             {
-                _pulses[i] = {row, col, now, true};
-                break;
+                if (_pulses[i].r == row && _pulses[i].c == col)
+                    return false;
+            }
+            else if (freeSlot == MAX_PULSES)
+            {
+                freeSlot = i;
             }
         }
+        if (freeSlot == MAX_PULSES)
+            return false;
+
+        _pool.set(bit, false);
+        if (_drv)
+        {
+            _drv->setNodeHardware(row, col, false);
+            _drv->commitPhysicalUpdates();
+        }
+        _pulses[freeSlot] = {row, col, _millis(), true};
     }
     else
     {
+        _pool.set(bit, false);
         if (_drv)
         {
             _drv->setNodeHardware(row, col, false);
@@ -182,76 +193,118 @@ bool XPoint::disconnect(uint8_t row, uint8_t col)
 
 bool XPoint::setLevel(uint8_t row, uint8_t col, uint16_t level)
 {
-    if (!_state || row >= _rows || col >= _cols)
+    if (!_pool.valid() || row >= _rows || col >= _cols)
         return false;
 
     bool on = (level > 0);
 
     if (on)
     {
-        /* Apply protections on the connecting path only; disconnects always allowed. */
+        uint32_t ibase = _ilockOff();
+        uint32_t ebase = _exclOff();
+
         for (uint8_t r = 0; r < _rows; ++r)
         {
             if (r == row)
                 continue;
-            if (_ilock[row * _rows + r] && _state[r * _cols + col])
+            if (_pool.get(ibase + (uint32_t)row * _rows + r) &&
+                (_pool.get((uint32_t)r * _cols + col) || _pulsePending(r, col)))
                 return false;
         }
-        if (_excl[col])
+        if (_pool.get(ebase + col))
         {
             for (uint8_t r = 0; r < _rows; ++r)
-                if (r != row && _state[r * _cols + col])
+                if (r != row && (_pool.get((uint32_t)r * _cols + col) || _pulsePending(r, col)))
                     return false;
         }
     }
 
-    _state[row * _cols + col] = on;
+    uint32_t bit = (uint32_t)row * _cols + col;
 
-    if (_drv)
+    if (_type == RE_LATCHING_DUAL_COIL)
     {
-        _drv->setNodeLevel(row, col, level);
-        _drv->commitPhysicalUpdates();
+        if (_pool.get(bit) == on)
+            return true; // idempotent
+
+        uint8_t freeSlot = MAX_PULSES;
+        for (uint8_t i = 0; i < MAX_PULSES; ++i)
+        {
+            if (_pulses[i].on)
+            {
+                if (_pulses[i].r == row && _pulses[i].c == col)
+                    return false;
+            }
+            else if (freeSlot == MAX_PULSES)
+            {
+                freeSlot = i;
+            }
+        }
+        if (freeSlot == MAX_PULSES)
+            return false;
+
+        _pool.set(bit, on);
+        if (_drv)
+        {
+            _drv->setNodeHardware(row, col, on);
+            _drv->commitPhysicalUpdates();
+        }
+        _pulses[freeSlot] = {row, col, _millis(), true};
+    }
+    else
+    {
+        _pool.set(bit, on);
+        if (_drv)
+        {
+            _drv->setNodeLevel(row, col, level);
+            _drv->commitPhysicalUpdates();
+        }
     }
     return true;
 }
 
 void XPoint::clearAll()
 {
-    if (!_state)
+    if (!_pool.valid())
         return;
 
-    unsigned long now = (_type == RE_LATCHING_DUAL_COIL) ? millis() : 0UL;
+    uint32_t now = (_type == RE_LATCHING_DUAL_COIL) ? _millis() : 0u;
 
     for (uint8_t r = 0; r < _rows; ++r)
     {
         for (uint8_t c = 0; c < _cols; ++c)
         {
-            if (!_state[r * _cols + c])
-                continue; // skip already-off nodes
+            uint32_t bit = (uint32_t)r * _cols + c;
+            if (!_pool.get(bit))
+                continue;
 
-            _state[r * _cols + c] = false;
-
-            if (_drv)
-                _drv->setNodeHardware(r, c, false);
+            _pool.set(bit, false);
 
             if (_type == RE_LATCHING_DUAL_COIL)
             {
-                /* Cancel any stale SET-coil pulse for this node so the slot
-                 * is freed and the stale release cannot cut the RESET pulse short. */
-                for (uint8_t i = 0; i < MAX_PULSES; ++i)
-                    if (_pulses[i].on && _pulses[i].r == r && _pulses[i].c == c)
-                        _pulses[i].on = false;
-
-                /* Register RESET pulse so releaseNode() fires after _pdur ms.
-                 * Nodes beyond MAX_PULSES=8 are silently skipped. */
+                uint8_t freeSlot = MAX_PULSES;
                 for (uint8_t i = 0; i < MAX_PULSES; ++i)
                 {
-                    if (!_pulses[i].on)
+                    if (_pulses[i].on && _pulses[i].r == r && _pulses[i].c == c)
                     {
-                        _pulses[i] = {r, c, now, true};
-                        break;
+                        _pulses[i].on = false;
+                        freeSlot = i;
+                    }
+                    else if (!_pulses[i].on && freeSlot == MAX_PULSES)
+                    {
+                        freeSlot = i;
                     }
                 }
+                if (freeSlot < MAX_PULSES)
+                {
+                    if (_drv)
+                        _drv->setNodeHardware(r, c, false);
+                    _pulses[freeSlot] = {r, c, now, true};
+                }
+            }
+            else
+            {
+                if (_drv)
+                    _drv->setNodeHardware(r, c, false);
             }
         }
     }
@@ -262,18 +315,18 @@ void XPoint::clearAll()
 
 void XPoint::lockRows(uint8_t rowA, uint8_t rowB)
 {
-    if (!_ilock || rowA >= _rows || rowB >= _rows)
+    if (!_pool.valid() || rowA >= _rows || rowB >= _rows)
         return;
-    /* Symmetric: set both directions so connect() only needs to check one half. */
-    _ilock[rowA * _rows + rowB] = true;
-    _ilock[rowB * _rows + rowA] = true;
+    uint32_t base = _ilockOff();
+    _pool.set(base + (uint32_t)rowA * _rows + rowB, true);
+    _pool.set(base + (uint32_t)rowB * _rows + rowA, true);
 }
 
 void XPoint::exclusiveInput(uint8_t col)
 {
-    if (!_excl || col >= _cols)
+    if (!_pool.valid() || col >= _cols)
         return;
-    _excl[col] = true;
+    _pool.set(_exclOff() + col, true);
 }
 
 /* --------------------------------------------------------------------------
@@ -285,15 +338,14 @@ void XPoint::update()
     if (_type != RE_LATCHING_DUAL_COIL)
         return;
 
-    unsigned long now = millis();
+    uint32_t now = _millis();
     bool any = false;
 
     for (uint8_t i = 0; i < MAX_PULSES; ++i)
     {
         if (!_pulses[i].on)
             continue;
-        /* Unsigned subtraction handles millis() 32-bit rollover correctly. */
-        if ((now - _pulses[i].t0) >= _pdur)
+        if ((now - _pulses[i].t0) >= (uint32_t)_pdur)
         {
             if (_drv)
                 _drv->releaseNode(_pulses[i].r, _pulses[i].c);

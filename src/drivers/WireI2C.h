@@ -58,6 +58,18 @@ class WireI2C : public I2CInterface
      * @param[in] val  Byte to write.
      */
     void writeRegister(uint8_t addr, uint8_t reg, uint8_t val) override;
+
+    /**
+     * @brief Write a single data byte to a device (no register address byte).
+     *
+     * Used by TCA9548AInterface to select a mux channel with a bare one-byte
+     * control word. Sequence: `beginTransmission` → `write(data)` → `endTransmission`.
+     * No-op on host builds (MockI2C test path uses the I2CInterface default).
+     *
+     * @param[in] addr 7-bit I2C device address.
+     * @param[in] data Control byte to write.
+     */
+    void writeByte(uint8_t addr, uint8_t data) override;
 };
 
 #endif // WIRE_I2C_H
