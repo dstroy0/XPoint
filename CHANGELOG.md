@@ -5,10 +5,12 @@ All notable changes to XPoint are documented here.
 ## [Unreleased]
 
 ### CI / Build
+- update CHANGELOG.md [skip ci] ([`9202b37`](https://github.com/dstroy0/XPoint/commit/9202b379bf08ba6c5fc9872cc4363bf08caa2d06))
 - update CHANGELOG.md [skip ci] ([`f0d3519`](https://github.com/dstroy0/XPoint/commit/f0d3519dbd452740559714feed5a43318ea183f7))
 
 
 ### Changes
+- add dependabot github-actions dependency auto-updater ([`9316b7a`](https://github.com/dstroy0/XPoint/commit/9316b7ac0ce4fffd1a02626b08233edd6b38cbba))
 - add version tag to readme ([`6f9dc65`](https://github.com/dstroy0/XPoint/commit/6f9dc65d5f97cab973ee444b0023bdeba6c42ef3))
 
 
