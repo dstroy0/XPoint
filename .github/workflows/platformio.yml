@@ -83,7 +83,7 @@ jobs:
       # Cache the PlatformIO package store (toolchains, frameworks, board defs)
       # keyed on platform + library.json so a dependency change busts the cache.
       # Boards sharing a platform (uno/mega/leonardo → atmelavr) share a key.
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.platformio
           key: pio-${{ matrix.platform }}-${{ hashFiles('library.json') }}
