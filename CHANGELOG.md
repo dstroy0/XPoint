@@ -5,11 +5,14 @@ All notable changes to XPoint are documented here.
 ## [Unreleased]
 
 ### CI / Build
+- bump stefanzweifel/git-auto-commit-action from 5 to 7 ([`d1a858b`](https://github.com/dstroy0/XPoint/commit/d1a858bdec835450918fa1589b139c54e19dc464))
+- update CHANGELOG.md [skip ci] ([`c97cf93`](https://github.com/dstroy0/XPoint/commit/c97cf93d69a75c1a7d9b55310e48edf4b1493569))
 - update CHANGELOG.md [skip ci] ([`9202b37`](https://github.com/dstroy0/XPoint/commit/9202b379bf08ba6c5fc9872cc4363bf08caa2d06))
 - update CHANGELOG.md [skip ci] ([`f0d3519`](https://github.com/dstroy0/XPoint/commit/f0d3519dbd452740559714feed5a43318ea183f7))
 
 
 ### Changes
+- Merge pull request #1 from dstroy0/dependabot/github_actions/stefanzweifel/git-auto-commit-action-7 ([`736f552`](https://github.com/dstroy0/XPoint/commit/736f552e706c992672b6daf61a68301ceec2a36f))
 - add dependabot github-actions dependency auto-updater ([`9316b7a`](https://github.com/dstroy0/XPoint/commit/9316b7ac0ce4fffd1a02626b08233edd6b38cbba))
 - add version tag to readme ([`6f9dc65`](https://github.com/dstroy0/XPoint/commit/6f9dc65d5f97cab973ee444b0023bdeba6c42ef3))
 
