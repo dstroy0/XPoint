@@ -56,7 +56,7 @@ jobs:
             core: arduino:sam
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
